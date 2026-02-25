@@ -1,0 +1,21 @@
+# Maven / Gradle
+target/
+.gradle/
+build/
+
+# Logs
+*.log
+
+# Application configs with secrets
+src/main/resources/application-*.yml
+src/main/resources/application-*.properties
+
+# IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
