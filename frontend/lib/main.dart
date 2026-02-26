@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
   runApp(const DiningApp());
@@ -12,12 +13,9 @@ class DiningApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Digital Dining System',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-        ),
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       home: const HomePage(),
     );
   }
@@ -28,11 +26,21 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Digital Dining System')),
       body: Center(
-        child: Text(
-          'Digital Dining System',
-          style: TextStyle(fontSize: 20),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Digital Dining System',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(color: scheme.onSurface),
+            ),
+          ),
         ),
       ),
     );
