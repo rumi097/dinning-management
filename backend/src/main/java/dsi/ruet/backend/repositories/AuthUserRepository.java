@@ -1,13 +1,13 @@
 package dsi.ruet.backend.repositories;
 
-import dsi.ruet.backend.models.AuthUser;
+import dsi.ruet.backend.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface AuthUserRepository extends JpaRepository<AuthUser, Long> {
-    Optional<AuthUser> findByEmail(String email);
+public interface AuthUserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
 }

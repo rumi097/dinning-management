@@ -1,4 +1,4 @@
-package dsi.ruet.backend.dto;
+package dsi.ruet.backend.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,10 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
-    private Long id;
+public class LoginRequest {
     private String email;
-    private String role;
-    private Boolean isVerified;
-    private String createdAt;
+    private String password;
 }

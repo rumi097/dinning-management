@@ -8,16 +8,16 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "auth_users")
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthUser implements UserDetails {
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,8 +25,16 @@ public class AuthUser implements UserDetails {
     @Column(unique = true, nullable = false, length = 120)
     private String email;
 
+    // renamed from passwordHash → pass
     @Column(nullable = false, length = 255)
-    private String passwordHash;
+    private String password;
+
+    @Column(nullable = false, length = 120)
+    private String name;
+
+    // If hall is another table later, we can convert this to @ManyToOne
+    @Column(nullable = false)
+    private Long hallId;
 
     @Column(nullable = false)
     private Boolean isVerified = false;
@@ -34,8 +42,8 @@ public class AuthUser implements UserDetails {
     @Column(nullable = false, length = 20)
     private String role; // STUDENT, MEAL_MANAGER, DINING_MANAGER
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+
+    /* ---------------- Spring Security ---------------- */
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -44,7 +52,7 @@ public class AuthUser implements UserDetails {
 
     @Override
     public String getPassword() {
-        return this.passwordHash;
+        return this.password;
     }
 
     @Override
@@ -69,6 +77,6 @@ public class AuthUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.isVerified;
+        return Boolean.TRUE.equals(this.isVerified);
     }
 }

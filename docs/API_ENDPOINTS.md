@@ -6,6 +6,11 @@
 
 ---
 
+# 0. Admin MODULE
+
+## Database Control
+- **POST** `/admin/add-user`
+
 # 1. Auth Module
 
 ## Signup & Verification
