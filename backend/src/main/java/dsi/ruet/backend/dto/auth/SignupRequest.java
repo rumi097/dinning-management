@@ -14,6 +14,5 @@ public class SignupRequest {
     private String roll;            // Optional - required only if role is STUDENT
     private String phoneNo;         // Optional - required only if role is STUDENT
     private String roomNo;          // Optional - for STUDENT role
-    private Long hallId;            // Optional - override placeholder
 }
 
