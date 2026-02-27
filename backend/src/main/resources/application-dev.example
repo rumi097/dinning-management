@@ -1,0 +1,16 @@
+# create src/main/resources/application-dev.example
+
+# Copy everything below to application-dev.properties
+
+
+#change these values to your own credential
+
+#database config
+spring.datasource.url=jdbc:postgresql://localhost:5432/_YOUR_DB_NAME
+spring.datasource.username=postgres
+spring.datasource.password=_YOUR_DB_PASSWORD
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+#jwt config
+jwt.secret=CHANGE_THIS_TO_A_LONG_STRING_MORE_THAN_64_CHAR
+jwt.expiration=86400000
