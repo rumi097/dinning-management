@@ -3,17 +3,12 @@ package dsi.ruet.backend.services;
 import dsi.ruet.backend.dto.auth.AuthResponse;
 import dsi.ruet.backend.dto.auth.LoginRequest;
 import dsi.ruet.backend.dto.auth.SignupRequest;
-// import dsi.ruet.backend.dto.ApiResponse;
-// import dsi.ruet.backend.dto.admin.AddUserRequest;
-// import dsi.ruet.backend.exception.DuplicateEmailException;
 import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
-// import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
-// import dsi.ruet.backend.repositories.HallRepository;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,9 +26,6 @@ public class AuthenticationService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
-
-    // @Autowired
-    // private HallRepository hallRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -130,14 +122,14 @@ public class AuthenticationService {
                 response.setRoomNo(savedStudentInfo.getRoomNo());
             }
         }
+
+        // #### ADD A NEW WALLET LINKED TO THIS USER ID
+
         
         return response;
     }
 
-    /**
-     * Login endpoint - authenticate user with email and password
-     * Returns token and user info (including StudentInfo if role is STUDENT)
-     */
+
     public AuthResponse login(LoginRequest request) {
         // Check if user exists and is verified
         User user = userRepository.findByEmail(request.getEmail())
