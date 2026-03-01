@@ -23,7 +23,7 @@ class _SignupPageState extends State<SignupPage> {
   late final TextEditingController _phoneController;
   late final TextEditingController _roomController;
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _agreeToTerms = false;
 
   @override

@@ -100,7 +100,9 @@ class _OtpPageState extends State<OtpPage> {
 
         // After OTP verification succeeds, send signup data to backend
         if (widget.signupRequest != null) {
-          await ServiceLocator.authService.completeSignup(widget.signupRequest!);
+          await ServiceLocator.authService.completeSignup(
+            widget.signupRequest!,
+          );
         }
       } else if (widget.flowType == 'forgot_password') {
         await ServiceLocator.authService.verifyResetOtp(widget.email, otp);
