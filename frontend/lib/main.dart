@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
+import 'features/meal_manager/screens/manager_dashboard.dart';
 
 void main() {
   runApp(const DiningApp());
@@ -16,7 +17,7 @@ class DiningApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: const HomePage(),
+      home: const ManagerDashboard(),
     );
   }
 }
