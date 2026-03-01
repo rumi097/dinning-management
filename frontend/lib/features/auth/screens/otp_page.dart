@@ -118,8 +118,19 @@ class _OtpPageState extends State<OtpPage> {
         ),
       );
 
-      // Call onSuccess callback
-      widget.onSuccess();
+      // For signup flow, redirect to login
+      if (widget.flowType == 'signup') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signup successful! Please login with your credentials.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/login');
+      } else {
+        // For other flows, call onSuccess callback
+        widget.onSuccess();
+      }
     } catch (e) {
       if (!mounted) return;
 
