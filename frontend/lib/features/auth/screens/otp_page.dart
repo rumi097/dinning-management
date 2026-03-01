@@ -122,7 +122,9 @@ class _OtpPageState extends State<OtpPage> {
       if (widget.flowType == 'signup') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Signup successful! Please login with your credentials.'),
+            content: Text(
+              'Signup successful! Please login with your credentials.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
