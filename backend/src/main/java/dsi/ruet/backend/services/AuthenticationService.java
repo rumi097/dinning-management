@@ -3,6 +3,9 @@ package dsi.ruet.backend.services;
 import dsi.ruet.backend.dto.auth.AuthResponse;
 import dsi.ruet.backend.dto.auth.LoginRequest;
 import dsi.ruet.backend.dto.auth.SignupRequest;
+import dsi.ruet.backend.dto.auth.SignupResponse;
+import dsi.ruet.backend.dto.auth.OtpResponse;
+import dsi.ruet.backend.dto.auth.OtpVerificationResponse;
 import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
@@ -17,6 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AuthenticationService {
@@ -36,25 +42,34 @@ public class AuthenticationService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    @Transactional
-    public AuthResponse signup(SignupRequest request) {
+    // ==================== IN-MEMORY CACHES FOR OTP FLOW ====================
+    // Stores email -> OTP pairs (temporary storage, expires after verification)
+    private final Map<String, String> emailOtpCache = new HashMap<>();
 
+    @Transactional
+    public SignupResponse signup(SignupRequest request) {
+        String email = request.getEmail();
+        
         // Check if email exists in Users table (must be pre-created by admin)
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "Email not found in system. Please contact admin to create your account."));
+        
+        if (!user.getIsVerified()) {
+
+            throw new AuthenticationException(
+                "Email not verified. Please verify with OTP first by calling /send-otp and /verify-otp endpoints.");
+        }
+
 
         
         // Check if user is already verified (completed signup before)
-        if (user.getIsVerified()) {
-            throw new AuthenticationException("This user has already completed signup. Please login.");
-        }
 
-        // Update user with signup data (override placeholders) - IN MEMORY ONLY
+        // Update user with signup data
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
 
-        // Create student info IN MEMORY ONLY if user role is STUDENT
+        // Create student info if user role is STUDENT
         StudentInfo studentInfo = null;
         if ("STUDENT".equals(user.getRole())) {
             // Validate required student fields
@@ -70,61 +85,20 @@ public class AuthenticationService {
             studentInfo.setPhoneNo(request.getPhoneNo());
         }
 
-        // TODO: DUMMY OTP VERIFICATION - For testing only
-        // In real implementation: Generate OTP, send to email, user calls /verify-otp endpoint
-        // For now: Automatically verify user (before saving to DB)
-        boolean otpVerified = verifyOTPDummy();
-        
-        if (!otpVerified) {
-            throw new AuthenticationException("OTP verification failed. Please try again.");
-        }
-        
-        // OTP passed - now save to database
-        user.setIsVerified(true);
+        // User is already verified via OTP in previous step, just save with password
         user = userRepository.save(user);
 
-        // Save StudentInfo only if it was created
+        // Save StudentInfo
         if (studentInfo != null) {
             studentInfoRepository.save(studentInfo);
         }
-
-        // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-
-        if (!authentication.isAuthenticated()) {
-            throw new AuthenticationException("Invalid email or password");
-        }
-        String token = tokenProvider.generateToken(authentication);
-
-
-        AuthResponse response = new AuthResponse();
-        response.setToken(token);
+        
+        // Return signup success response
+        SignupResponse response = new SignupResponse();
         response.setEmail(user.getEmail());
         response.setUserId(user.getId());
-        response.setName(user.getName());
-        response.setRole(user.getRole());
-        response.setHallId(user.getHallId()); 
-
-
+        response.setMessage("Signup completed successfully. You can now login.");
         
-        // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
-            StudentInfo savedStudentInfo = studentInfoRepository.findById(user.getId())
-                    .orElse(null);
-            if (savedStudentInfo != null) {
-                response.setRoll(savedStudentInfo.getRoll());
-                response.setPhoneNo(savedStudentInfo.getPhoneNo());
-                response.setRoomNo(savedStudentInfo.getRoomNo());
-            }
-        }
-
-        // #### ADD A NEW WALLET LINKED TO THIS USER ID
-
         
         return response;
     }
@@ -213,6 +187,96 @@ public class AuthenticationService {
     // ==================== OTP VERIFICATION (Ready for Implementation) ====================
 
     /**
+     * Send OTP to user's email (step 1 of signup flow)
+     * Generates OTP (fixed 123456 for now) and stores email-otp pair temporarily
+     * @param email User email
+     * @return OtpResponse indicating OTP was sent
+     */
+    public OtpResponse sendOtp(String email) {
+        // TODO: Later - check if email exists in Users table
+        
+        // For now: Accept any email
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+
+        // Generate OTP - Fixed value for testing (123456)
+        // TODO: Later replace with: Random rand = new Random(); String otp = String.format("%06d", 100000 + rand.nextInt(900000));
+        String otp = "123456";
+
+        // Store email-OTP pair in cache (temporary storage)
+        emailOtpCache.put(email, otp);
+        
+        // TODO: Actually send OTP to email using JavaMailSender
+        System.out.println("OTP sent to " + email + ": " + otp); // For testing
+        
+        OtpResponse response = new OtpResponse();
+        response.setEmail(email);
+        response.setMessage("OTP sent to your email. Please verify with /verify-otp endpoint.");
+        response.setSuccess(true);
+        
+        return response;
+    }
+
+    /**
+     * Verify OTP provided by user (step 2 of signup flow)
+     * Checks if email-otp pair matches the stored value in cache
+     * If verified, sets user.isVerified = true in database (prerequisite for signup)
+     * @param email User email
+     * @param otp OTP code provided by user
+     * @return OtpVerificationResponse indicating if verification was successful
+     */
+    @Transactional
+    public OtpVerificationResponse verifyOtp(String email, String otp) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+        
+        if (otp == null || otp.isEmpty()) {
+            throw new IllegalArgumentException("OTP cannot be empty");
+        }
+
+        // Check if email exists in OTP cache
+        if (!emailOtpCache.containsKey(email)) {
+            OtpVerificationResponse response = new OtpVerificationResponse();
+            response.setEmail(email);
+            response.setMessage("No OTP found for this email. Please request a new OTP with /send-otp");
+            response.setVerified(false);
+            return response;
+        }
+
+        // Get stored OTP for this email
+        String storedOtp = emailOtpCache.get(email);
+
+        // Verify if provided OTP matches stored OTP
+        if (!otp.equals(storedOtp)) {
+            OtpVerificationResponse response = new OtpVerificationResponse();
+            response.setEmail(email);
+            response.setMessage("Invalid OTP. Please try again.");
+            response.setVerified(false);
+            return response;
+        }
+
+        // OTP matches - Mark user as verified in database
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "User not found with email: " + email));
+        
+        user.setIsVerified(true);
+        userRepository.save(user);
+        
+        // Remove OTP from cache after successful verification (once verified, no need to keep OTP)
+        emailOtpCache.remove(email);
+        
+        OtpVerificationResponse response = new OtpVerificationResponse();
+        response.setEmail(email);
+        response.setMessage("OTP verified successfully. You can now complete signup with /signup endpoint.");
+        response.setVerified(true);
+        
+        return response;
+    }
+
+    /**
      * TODO: Generate OTP code (6 digits random)
      * Store in cache/database with expiry time (5-10 minutes)
      * @param email User email
@@ -237,29 +301,5 @@ public class AuthenticationService {
         // 1. Create email message
         // 2. Send OTP to user's email address
         // 3. Log success/failure
-    }
-
-    /**
-     * Verify OTP and complete signup - returns JWT token for successful verification
-     * @param email User email
-     * @param otp OTP code provided by user
-     * @return AuthResponse with JWT token (same as login response)
-     */
-    public AuthResponse verifyOTP(String email, String otp) {
-
-        AuthResponse response = new AuthResponse();
-
-        return response;
-    }
-
-    /**
-     * Dummy OTP verification - always returns true for testing
-     * Will be replaced with actual OTP verification logic later
-     * @return always true for now
-     */
-    private boolean verifyOTPDummy() {
-        // TODO: Replace this with actual OTP verification
-        // For now, always return true to test other parts of the system
-        return true;
     }
 }
