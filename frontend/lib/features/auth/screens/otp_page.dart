@@ -93,33 +93,26 @@ class _OtpPageState extends State<OtpPage> {
 
     try {
       if (widget.flowType == 'signup') {
-        // Verify OTP first
-        await ServiceLocator.authService.verifySignupOtp(widget.email, otp);
+        // Step 1: Verify OTP
+        final otpVerification = await ServiceLocator.authService
+            .verifySignupOtp(widget.email, otp);
+
+        if (!otpVerification.verified) {
+          throw Exception('OTP verification failed');
+        }
 
         if (!mounted) return;
 
-        // After OTP verification succeeds, send signup data to backend
+        // Step 2: After OTP verification succeeds, send signup data to backend
         if (widget.signupRequest != null) {
           await ServiceLocator.authService.completeSignup(
             widget.signupRequest!,
           );
         }
-      } else if (widget.flowType == 'forgot_password') {
-        await ServiceLocator.authService.verifyResetOtp(widget.email, otp);
-      }
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('OTP verified successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // For signup flow, redirect to login
-      if (widget.flowType == 'signup') {
+        // Step 3: Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -128,9 +121,30 @@ class _OtpPageState extends State<OtpPage> {
             backgroundColor: Colors.green,
           ),
         );
+
+        // Step 4: Redirect to login page
         Navigator.of(context).pushReplacementNamed('/login');
-      } else {
-        // For other flows, call onSuccess callback
+      } else if (widget.flowType == 'forgot_password') {
+        final otpVerification = await ServiceLocator.authService.verifyResetOtp(
+          widget.email,
+          otp,
+        );
+
+        if (!otpVerification.verified) {
+          throw Exception('OTP verification failed');
+        }
+
+        if (!mounted) return;
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OTP verified! Please set your new password.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Call onSuccess callback for forgot password flow
         widget.onSuccess();
       }
     } catch (e) {

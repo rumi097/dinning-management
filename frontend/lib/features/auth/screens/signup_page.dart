@@ -23,7 +23,7 @@ class _SignupPageState extends State<SignupPage> {
   late final TextEditingController _phoneController;
   late final TextEditingController _roomController;
 
-  final bool _isLoading = false;
+  bool _isLoading = false;
   bool _agreeToTerms = false;
 
   @override
@@ -128,39 +128,70 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    // Create SignupRequest (data saved locally, NOT sent to backend yet)
-    final request = SignupRequest(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      name: _nameController.text.trim(),
-      roll: _rollController.text.isNotEmpty
-          ? _rollController.text.trim()
-          : null,
-      phoneNo: _phoneController.text.isNotEmpty
-          ? _phoneController.text.trim()
-          : null,
-      roomNo: _roomController.text.isNotEmpty
-          ? _roomController.text.trim()
-          : null,
-    );
+    setState(() => _isLoading = true);
 
-    if (!mounted) return;
+    try {
+      // Step 1: Send OTP to email
+      final email = _emailController.text.trim();
+      await ServiceLocator.authService.sendSignupOtp(email);
 
-    // Navigate to OTP verification with form data
-    // Data will be sent to backend AFTER OTP verification is successful
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => OtpPage(
-          email: _emailController.text.trim(),
-          flowType: 'signup',
-          signupRequest: request, // Pass form data to OTP page
-          onSuccess: () {
-            // After OTP verification, navigate to student home
-            Navigator.of(context).pushReplacementNamed('/student-home');
-          },
+      if (!mounted) return;
+
+      // Step 2: Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('OTP sent to your email'),
+          backgroundColor: Colors.green,
         ),
-      ),
-    );
+      );
+
+      // Step 3: Create SignupRequest with form data (saved locally, NOT sent yet)
+      final request = SignupRequest(
+        email: email,
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+        roll: _rollController.text.isNotEmpty
+            ? _rollController.text.trim()
+            : null,
+        phoneNo: _phoneController.text.isNotEmpty
+            ? _phoneController.text.trim()
+            : null,
+        roomNo: _roomController.text.isNotEmpty
+            ? _roomController.text.trim()
+            : null,
+      );
+
+      if (!mounted) return;
+
+      // Step 4: Navigate to OTP verification with form data
+      // Data will be sent to backend AFTER OTP verification is successful
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => OtpPage(
+            email: email,
+            flowType: 'signup',
+            signupRequest: request, // Pass form data to OTP page
+            onSuccess: () {
+              // After OTP verification and signup, navigate to login
+              Navigator.of(context).pushReplacementNamed('/login');
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send OTP: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override

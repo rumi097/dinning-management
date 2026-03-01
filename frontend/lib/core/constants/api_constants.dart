@@ -7,12 +7,13 @@ class ApiConstants {
   // Auth endpoints
   static const String loginEndpoint = '/auth/login';
   static const String signupEndpoint = '/auth/signup';
+  static const String sendOtpEndpoint = '/auth/send-otp';
   static const String verifyOtpEndpoint = '/auth/verify-otp';
   static const String getCurrentUserEndpoint = '/auth/me';
 
   // TODO: These endpoints need to be implemented in the backend
-  static const String sendSignupOtpEndpoint = '/auth/send-signup-otp';
-  static const String sendResetOtpEndpoint = '/auth/send-reset-otp';
+  static const String sendResetOtpEndpoint =
+      '/auth/send-otp'; // Same endpoint, different flow
   static const String resetPasswordEndpoint = '/auth/reset-password';
 
   // API timeout in milliseconds

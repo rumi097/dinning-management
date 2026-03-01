@@ -5,6 +5,9 @@ import 'package:frontend/core/storage/token_storage.dart';
 import 'package:frontend/features/auth/models/auth_response.dart';
 import 'package:frontend/features/auth/models/login_request.dart';
 import 'package:frontend/features/auth/models/signup_request.dart';
+import 'package:frontend/features/auth/models/otp_response.dart';
+import 'package:frontend/features/auth/models/otp_verification_response.dart';
+import 'package:frontend/features/auth/models/signup_response.dart';
 
 class AuthService {
   final ApiClient _apiClient;
@@ -42,33 +45,49 @@ class AuthService {
     }
   }
 
-  /// Send OTP for signup
-  Future<void> sendSignupOtp(String email) async {
+  /// Send OTP for signup (step 1)
+  Future<OtpResponse> sendSignupOtp(String email) async {
     try {
-      // TODO: Backend needs to implement this endpoint
-      await _apiClient.post(
-        ApiConstants.sendSignupOtpEndpoint,
-        data: {'email': email},
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiConstants.sendOtpEndpoint,
+        queryParameters: {'email': email},
       );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return OtpResponse.fromJson(response.data!);
+      } else {
+        throw Exception('Failed to send OTP');
+      }
     } on DioException catch (e) {
       throw _handleDioException(e);
     }
   }
 
-  /// Verify signup OTP
-  Future<void> verifySignupOtp(String email, String otp) async {
+  /// Verify signup OTP (step 2)
+  Future<OtpVerificationResponse> verifySignupOtp(
+    String email,
+    String otp,
+  ) async {
     try {
-      await _apiClient.post(
+      final response = await _apiClient.post<Map<String, dynamic>>(
         ApiConstants.verifyOtpEndpoint,
         queryParameters: {'email': email, 'otp': otp},
       );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return OtpVerificationResponse.fromJson(response.data!);
+      } else {
+        throw Exception('Failed to verify OTP');
+      }
     } on DioException catch (e) {
       throw _handleDioException(e);
     }
   }
 
-  /// Complete signup with credentials
-  Future<AuthResponse> completeSignup(SignupRequest request) async {
+  /// Complete signup with credentials (step 3)
+  /// After OTP is verified, send signup data to backend
+  /// Returns SignupResponse (no token - user must login after signup)
+  Future<SignupResponse> completeSignup(SignupRequest request) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
         ApiConstants.signupEndpoint,
@@ -76,16 +95,8 @@ class AuthService {
       );
 
       if (response.statusCode == 201 && response.data != null) {
-        // Backend returns AuthResponse directly (not wrapped in ApiResponse)
-        final authResponse = AuthResponse.fromJson(response.data!);
-
-        // Save token and user info
-        await _tokenStorage.saveToken(authResponse.token);
-        await _tokenStorage.saveEmail(authResponse.email);
-        await _tokenStorage.saveUserId(authResponse.userId);
-        await _tokenStorage.saveRole(authResponse.role);
-
-        return authResponse;
+        // Backend returns SignupResponse (not AuthResponse)
+        return SignupResponse.fromJson(response.data!);
       } else {
         throw Exception('Failed to complete signup');
       }
@@ -95,25 +106,39 @@ class AuthService {
   }
 
   /// Send OTP for password reset
-  Future<void> sendResetOtp(String email) async {
+  Future<OtpResponse> sendResetOtp(String email) async {
     try {
-      // TODO: Backend needs to implement this endpoint
-      await _apiClient.post(
+      final response = await _apiClient.post<Map<String, dynamic>>(
         ApiConstants.sendResetOtpEndpoint,
-        data: {'email': email},
+        queryParameters: {'email': email},
       );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return OtpResponse.fromJson(response.data!);
+      } else {
+        throw Exception('Failed to send reset OTP');
+      }
     } on DioException catch (e) {
       throw _handleDioException(e);
     }
   }
 
   /// Verify reset OTP
-  Future<void> verifyResetOtp(String email, String otp) async {
+  Future<OtpVerificationResponse> verifyResetOtp(
+    String email,
+    String otp,
+  ) async {
     try {
-      await _apiClient.post(
+      final response = await _apiClient.post<Map<String, dynamic>>(
         ApiConstants.verifyOtpEndpoint,
         queryParameters: {'email': email, 'otp': otp},
       );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return OtpVerificationResponse.fromJson(response.data!);
+      } else {
+        throw Exception('Failed to verify reset OTP');
+      }
     } on DioException catch (e) {
       throw _handleDioException(e);
     }
