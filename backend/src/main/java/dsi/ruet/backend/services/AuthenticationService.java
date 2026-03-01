@@ -14,15 +14,19 @@ import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @Service
 public class AuthenticationService {
@@ -42,9 +46,35 @@ public class AuthenticationService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Value("${app.mail.from}")
+    private String mailFrom;
+
     // ==================== IN-MEMORY CACHES FOR OTP FLOW ====================
     // Stores email -> OTP pairs (temporary storage, expires after verification)
-    private final Map<String, String> emailOtpCache = new HashMap<>();
+    private final Map<String, OtpEntry> emailOtpCache = new HashMap<>();
+
+    /**
+     * Inner class to store OTP with expiry time (5 minutes)
+     */
+    private static class OtpEntry {
+        String otp;
+        long expiryTime;
+
+        OtpEntry(String otp, long expiryTime) {
+            this.otp = otp;
+            this.expiryTime = expiryTime;
+        }
+
+        /**
+         * Check if OTP has expired
+         */
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -200,19 +230,22 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Email cannot be empty");
         }
 
-        // Generate OTP - Fixed value for testing (123456)
-        // TODO: Later replace with: Random rand = new Random(); String otp = String.format("%06d", 100000 + rand.nextInt(900000));
-        String otp = "123456";
+        // Generate random 6-digit OTP
+        String otp = generateOTP(email);
 
-        // Store email-OTP pair in cache (temporary storage)
-        emailOtpCache.put(email, otp);
+        // Set expiry time to 5 minutes from now
+        long expiryTime = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutes in milliseconds
         
-        // TODO: Actually send OTP to email using JavaMailSender
-        System.out.println("OTP sent to " + email + ": " + otp); // For testing
+        // Store email-OTP pair in cache with expiry time
+        // Note: If email already exists, the new OTP-expiry pair will override the old one
+        emailOtpCache.put(email, new OtpEntry(otp, expiryTime));
+        
+        // Send OTP to email using JavaMailSender
+        sendOTPEmail(email, otp);
         
         OtpResponse response = new OtpResponse();
         response.setEmail(email);
-        response.setMessage("OTP sent to your email. Please verify with /verify-otp endpoint.");
+        response.setMessage("OTP sent to your email. Please verify with /verify-otp endpoint. OTP expires in 5 minutes.");
         response.setSuccess(true);
         
         return response;
@@ -245,11 +278,21 @@ public class AuthenticationService {
             return response;
         }
 
-        // Get stored OTP for this email
-        String storedOtp = emailOtpCache.get(email);
+        // Get stored OTP entry for this email
+        OtpEntry otpEntry = emailOtpCache.get(email);
+
+        // Check if OTP has expired (5 minutes timeout)
+        if (otpEntry.isExpired()) {
+            emailOtpCache.remove(email);
+            OtpVerificationResponse response = new OtpVerificationResponse();
+            response.setEmail(email);
+            response.setMessage("OTP has expired (valid for 5 minutes). Please request a new OTP with /send-otp");
+            response.setVerified(false);
+            return response;
+        }
 
         // Verify if provided OTP matches stored OTP
-        if (!otp.equals(storedOtp)) {
+        if (!otp.equals(otpEntry.otp)) {
             OtpVerificationResponse response = new OtpVerificationResponse();
             response.setEmail(email);
             response.setMessage("Invalid OTP. Please try again.");
@@ -277,29 +320,45 @@ public class AuthenticationService {
     }
 
     /**
-     * TODO: Generate OTP code (6 digits random)
-     * Store in cache/database with expiry time (5-10 minutes)
+     * Generate OTP code (6 digits random)
      * @param email User email
      * @return Generated OTP code
      */
     private String generateOTP(String email) {
-        // TODO: Implementation
-        // 1. Generate 6-digit random code
-        // 2. Save in OTP cache with expiry
-        // 3. Log OTP for testing (remove in production)
-        // Example: Random rand = new Random(); int otp = 100000 + rand.nextInt(900000);
-        return null;
+        // Generate 6-digit random code (100000 to 999999)
+        Random rand = new Random();
+        int otpCode = 100000 + rand.nextInt(900000);
+        String otp = String.valueOf(otpCode);
+        
+        // Log OTP for testing (remove in production)
+        System.out.println("Generated OTP for " + email + ": " + otp);
+        
+        return otp;
     }
 
     /**
-     * TODO: Send OTP via email
+     * Send OTP via email using JavaMailSender
      * @param email User email
      * @param otp OTP code to send
      */
     private void sendOTPEmail(String email, String otp) {
-        // TODO: Implementation using JavaMailSender
-        // 1. Create email message
-        // 2. Send OTP to user's email address
-        // 3. Log success/failure
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject("OTP Verification - Your OTP Code");
+            message.setText("Hello,\n\n" +
+                    "Your One-Time Password (OTP) for signup verification is: " + otp + "\n\n" +
+                    "This OTP is valid for 5 minutes only.\n\n" +
+                    "If you did not request this OTP, please ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "Your Application Team");
+            message.setFrom(mailFrom);
+            
+            mailSender.send(message);
+            System.out.println("OTP email sent successfully to: " + email);
+        } catch (Exception e) {
+            System.err.println("Failed to send OTP email to " + email + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
