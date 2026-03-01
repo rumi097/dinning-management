@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
+import 'package:frontend/features/auth/models/signup_request.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
   final String flowType; // 'signup' or 'forgot_password'
   final VoidCallback onSuccess;
+  final SignupRequest? signupRequest; // Form data for signup flow
 
   const OtpPage({
     super.key,
     required this.email,
     required this.flowType,
     required this.onSuccess,
+    this.signupRequest,
   });
 
   @override
@@ -90,7 +93,15 @@ class _OtpPageState extends State<OtpPage> {
 
     try {
       if (widget.flowType == 'signup') {
+        // Verify OTP first
         await ServiceLocator.authService.verifySignupOtp(widget.email, otp);
+
+        if (!mounted) return;
+
+        // After OTP verification succeeds, send signup data to backend
+        if (widget.signupRequest != null) {
+          await ServiceLocator.authService.completeSignup(widget.signupRequest!);
+        }
       } else if (widget.flowType == 'forgot_password') {
         await ServiceLocator.authService.verifyResetOtp(widget.email, otp);
       }

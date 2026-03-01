@@ -128,56 +128,39 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    // Create SignupRequest (data saved locally, NOT sent to backend yet)
+    final request = SignupRequest(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      name: _nameController.text.trim(),
+      roll: _rollController.text.isNotEmpty
+          ? _rollController.text.trim()
+          : null,
+      phoneNo: _phoneController.text.isNotEmpty
+          ? _phoneController.text.trim()
+          : null,
+      roomNo: _roomController.text.isNotEmpty
+          ? _roomController.text.trim()
+          : null,
+    );
 
-    try {
-      final request = SignupRequest(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        name: _nameController.text.trim(),
-        roll: _rollController.text.isNotEmpty
-            ? _rollController.text.trim()
-            : null,
-        phoneNo: _phoneController.text.isNotEmpty
-            ? _phoneController.text.trim()
-            : null,
-        roomNo: _roomController.text.isNotEmpty
-            ? _roomController.text.trim()
-            : null,
-      );
+    if (!mounted) return;
 
-      // Call signup API
-      await ServiceLocator.authService.completeSignup(request);
-
-      if (!mounted) return;
-
-      // Navigate to OTP verification
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => OtpPage(
-            email: _emailController.text.trim(),
-            flowType: 'signup',
-            onSuccess: () {
-              // After OTP verification, navigate to role-based screen
-              Navigator.of(context).pushReplacementNamed('/student-home');
-            },
-          ),
+    // Navigate to OTP verification with form data
+    // Data will be sent to backend AFTER OTP verification is successful
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => OtpPage(
+          email: _emailController.text.trim(),
+          flowType: 'signup',
+          signupRequest: request, // Pass form data to OTP page
+          onSuccess: () {
+            // After OTP verification, navigate to student home
+            Navigator.of(context).pushReplacementNamed('/student-home');
+          },
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+      ),
+    );
   }
 
   @override
