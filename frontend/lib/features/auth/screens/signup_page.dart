@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/app_text_field.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
 import 'package:frontend/features/auth/models/signup_request.dart';
-import 'package:frontend/features/auth/screens/login_page.dart';
 import 'package:frontend/features/auth/screens/otp_page.dart';
-import 'package:frontend/features/auth/services/auth_service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -15,7 +14,6 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  late final AuthService _authService;
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _emailController;
   late final TextEditingController _nameController;
@@ -26,13 +24,11 @@ class _SignupPageState extends State<SignupPage> {
   late final TextEditingController _roomController;
 
   bool _isLoading = false;
-  bool _isStudent = false;
   bool _agreeToTerms = false;
 
   @override
   void initState() {
     super.initState();
-    _authService = AuthService();
     _formKey = GlobalKey<FormState>();
     _emailController = TextEditingController();
     _nameController = TextEditingController();
@@ -97,6 +93,27 @@ class _SignupPageState extends State<SignupPage> {
     return null;
   }
 
+  String? _validateRoll(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Roll number is required';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone number is required';
+    }
+    return null;
+  }
+
+  String? _validateRoom(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Room number is required';
+    }
+    return null;
+  }
+
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -118,19 +135,19 @@ class _SignupPageState extends State<SignupPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         name: _nameController.text.trim(),
-        roll: _isStudent && _rollController.text.isNotEmpty
+        roll: _rollController.text.isNotEmpty
             ? _rollController.text.trim()
             : null,
-        phoneNo: _isStudent && _phoneController.text.isNotEmpty
+        phoneNo: _phoneController.text.isNotEmpty
             ? _phoneController.text.trim()
             : null,
-        roomNo: _isStudent && _roomController.text.isNotEmpty
+        roomNo: _roomController.text.isNotEmpty
             ? _roomController.text.trim()
             : null,
       );
 
       // Call signup API
-      await _authService.completeSignup(request);
+      await ServiceLocator.authService.completeSignup(request);
 
       if (!mounted) return;
 
@@ -192,7 +209,7 @@ class _SignupPageState extends State<SignupPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Get Started',
+                          'Join the Dining System',
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -201,7 +218,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Create your account to access the dining system',
+                          'Create your student account to access meal services',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
@@ -275,72 +292,54 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Student fields toggle
-                              Card(
-                                elevation: 0,
-                                color: scheme.surfaceContainerHighest,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    children: [
-                                      Checkbox(
-                                        value: _isStudent,
-                                        onChanged: (value) {
-                                          setState(
-                                            () => _isStudent = value ?? false,
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'I am a student (optional)',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              // Student Information
+                              Text(
+                                'Student Information',
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(color: scheme.onSurface),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Roll Number field
+                              AppTextField(
+                                label: 'Roll Number',
+                                hint: 'e.g., 21-1234',
+                                controller: _rollController,
+                                validator: _validateRoll,
+                                prefixIcon: Icon(
+                                  Icons.badge_outlined,
+                                  color: scheme.primary,
                                 ),
                               ),
                               const SizedBox(height: 16),
 
-                              // Student fields (conditional)
-                              if (_isStudent) ...[
-                                AppTextField(
-                                  label: 'Roll Number',
-                                  hint: 'e.g., 21-1234',
-                                  controller: _rollController,
-                                  prefixIcon: Icon(
-                                    Icons.badge_outlined,
-                                    color: scheme.primary,
-                                  ),
+                              // Phone Number field
+                              AppTextField(
+                                label: 'Phone Number',
+                                hint: '+880XXXXXXXXX',
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                validator: _validatePhone,
+                                prefixIcon: Icon(
+                                  Icons.phone_outlined,
+                                  color: scheme.primary,
                                 ),
-                                const SizedBox(height: 16),
-                                AppTextField(
-                                  label: 'Phone Number',
-                                  hint: '+880XXXXXXXXX',
-                                  controller: _phoneController,
-                                  keyboardType: TextInputType.phone,
-                                  prefixIcon: Icon(
-                                    Icons.phone_outlined,
-                                    color: scheme.primary,
-                                  ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Room Number field
+                              AppTextField(
+                                label: 'Room Number',
+                                hint: '101',
+                                controller: _roomController,
+                                keyboardType: TextInputType.number,
+                                validator: _validateRoom,
+                                prefixIcon: Icon(
+                                  Icons.door_sliding_outlined,
+                                  color: scheme.primary,
                                 ),
-                                const SizedBox(height: 16),
-                                AppTextField(
-                                  label: 'Room Number',
-                                  hint: '101',
-                                  controller: _roomController,
-                                  keyboardType: TextInputType.number,
-                                  prefixIcon: Icon(
-                                    Icons.door_sliding_outlined,
-                                    color: scheme.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                              ],
+                              ),
+                              const SizedBox(height: 24),
 
                               // Terms checkbox
                               Row(

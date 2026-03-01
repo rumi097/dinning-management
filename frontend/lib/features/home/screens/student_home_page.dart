@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/storage/token_storage.dart';
-import 'package:frontend/features/auth/screens/login_page.dart';
+import 'package:frontend/core/services/service_locator.dart';
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -10,19 +9,17 @@ class StudentHomePage extends StatefulWidget {
 }
 
 class _StudentHomePageState extends State<StudentHomePage> {
-  late final TokenStorage _tokenStorage;
   String? _userName;
   String? _userEmail;
 
   @override
   void initState() {
     super.initState();
-    _tokenStorage = TokenStorage();
     _loadUserInfo();
   }
 
   Future<void> _loadUserInfo() async {
-    final email = await _tokenStorage.getEmail();
+    final email = await ServiceLocator.tokenStorage.getEmail();
     setState(() {
       _userEmail = email;
       _userName = email?.split('@').first ?? 'Student';
@@ -30,7 +27,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
   }
 
   Future<void> _handleLogout() async {
-    await _tokenStorage.clearAll();
+    await ServiceLocator.tokenStorage.clearAll();
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/login');
   }

@@ -24,9 +24,8 @@ class AuthService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data!;
-        final authResponseData = data['data'] as Map<String, dynamic>;
-        final authResponse = AuthResponse.fromJson(authResponseData);
+        // Backend returns AuthResponse directly (not wrapped in ApiResponse)
+        final authResponse = AuthResponse.fromJson(response.data!);
 
         // Save token and user info
         await _tokenStorage.saveToken(authResponse.token);
@@ -77,9 +76,8 @@ class AuthService {
       );
 
       if (response.statusCode == 201 && response.data != null) {
-        final data = response.data!;
-        final authResponseData = data['data'] as Map<String, dynamic>;
-        final authResponse = AuthResponse.fromJson(authResponseData);
+        // Backend returns AuthResponse directly (not wrapped in ApiResponse)
+        final authResponse = AuthResponse.fromJson(response.data!);
 
         // Save token and user info
         await _tokenStorage.saveToken(authResponse.token);
@@ -150,9 +148,8 @@ class AuthService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data!;
-        final authResponseData = data['data'] as Map<String, dynamic>;
-        return AuthResponse.fromJson(authResponseData);
+        // Backend returns AuthResponse directly with Bearer token in Authorization header
+        return AuthResponse.fromJson(response.data!);
       } else {
         throw Exception('Failed to get current user');
       }

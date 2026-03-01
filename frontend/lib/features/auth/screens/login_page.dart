@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/storage/token_storage.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/app_text_field.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
-import 'package:frontend/features/auth/screens/forget_password_page.dart';
+import 'package:frontend/features/auth/screens/forgot_password_page.dart';
 import 'package:frontend/features/auth/screens/signup_page.dart';
-import 'package:frontend/features/auth/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,10 +14,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late final AuthService _authService;
+  late final GlobalKey<FormState> _formKey;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
-  late final GlobalKey<FormState> _formKey;
 
   bool _isLoading = false;
   String? _emailError;
@@ -27,10 +25,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _authService = AuthService();
+    _formKey = GlobalKey<FormState>();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
-    _formKey = GlobalKey<FormState>();
   }
 
   @override
@@ -80,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await _authService.login(
+      final response = await ServiceLocator.authService.login(
         _emailController.text.trim(),
         _passwordController.text,
       );

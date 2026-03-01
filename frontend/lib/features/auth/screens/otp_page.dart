@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
-import 'package:frontend/core/widgets/app_secondary_button.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
-import 'package:frontend/features/auth/services/auth_service.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
@@ -21,7 +20,6 @@ class OtpPage extends StatefulWidget {
 }
 
 class _OtpPageState extends State<OtpPage> {
-  late final AuthService _authService;
   late final List<TextEditingController> _otpControllers;
   late final List<FocusNode> _otpFocusNodes;
 
@@ -33,7 +31,6 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void initState() {
     super.initState();
-    _authService = AuthService();
     _otpControllers = List.generate(6, (_) => TextEditingController());
     _otpFocusNodes = List.generate(6, (_) => FocusNode());
     _startResendTimer();
@@ -93,9 +90,9 @@ class _OtpPageState extends State<OtpPage> {
 
     try {
       if (widget.flowType == 'signup') {
-        await _authService.verifySignupOtp(widget.email, otp);
+        await ServiceLocator.authService.verifySignupOtp(widget.email, otp);
       } else if (widget.flowType == 'forgot_password') {
-        await _authService.verifyResetOtp(widget.email, otp);
+        await ServiceLocator.authService.verifyResetOtp(widget.email, otp);
       }
 
       if (!mounted) return;
@@ -126,9 +123,9 @@ class _OtpPageState extends State<OtpPage> {
 
     try {
       if (widget.flowType == 'signup') {
-        await _authService.sendSignupOtp(widget.email);
+        await ServiceLocator.authService.sendSignupOtp(widget.email);
       } else if (widget.flowType == 'forgot_password') {
-        await _authService.sendResetOtp(widget.email);
+        await ServiceLocator.authService.sendResetOtp(widget.email);
       }
 
       if (!mounted) return;

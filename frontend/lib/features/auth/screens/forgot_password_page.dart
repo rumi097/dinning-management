@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/app_text_field.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
 import 'package:frontend/features/auth/screens/otp_page.dart';
-import 'package:frontend/features/auth/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -13,7 +13,6 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  late final AuthService _authService;
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _emailController;
 
@@ -23,7 +22,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   void initState() {
     super.initState();
-    _authService = AuthService();
     _formKey = GlobalKey<FormState>();
     _emailController = TextEditingController();
   }
@@ -54,7 +52,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.sendResetOtp(_emailController.text.trim());
+      await ServiceLocator.authService.sendResetOtp(
+        _emailController.text.trim(),
+      );
 
       if (!mounted) return;
 
@@ -244,7 +244,6 @@ class ResetPasswordPage extends StatefulWidget {
 }
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
-  late final AuthService _authService;
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
@@ -254,7 +253,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   void initState() {
     super.initState();
-    _authService = AuthService();
     _formKey = GlobalKey<FormState>();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
@@ -295,7 +293,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.resetPassword(
+      await ServiceLocator.authService.resetPassword(
         widget.email,
         _passwordController.text,
         _confirmPasswordController.text,

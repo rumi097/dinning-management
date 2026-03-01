@@ -1,8 +1,8 @@
 class ApiConstants {
   // Base URL - change this to your backend URL
-  // For local testing: http://localhost:8080
+  // For local testing: http://localhost:8080/api/v1
   // For production: update accordingly
-  static const String baseUrl = 'http://localhost:8080';
+  static const String baseUrl = 'http://localhost:8080/api/v1';
 
   // Auth endpoints
   static const String loginEndpoint = '/auth/login';

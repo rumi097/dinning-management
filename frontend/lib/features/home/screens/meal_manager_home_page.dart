@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/storage/token_storage.dart';
+import 'package:frontend/core/services/service_locator.dart';
 
 class MealManagerHomePage extends StatefulWidget {
   const MealManagerHomePage({super.key});
@@ -9,19 +9,17 @@ class MealManagerHomePage extends StatefulWidget {
 }
 
 class _MealManagerHomePageState extends State<MealManagerHomePage> {
-  late final TokenStorage _tokenStorage;
   String? _userName;
   String? _userEmail;
 
   @override
   void initState() {
     super.initState();
-    _tokenStorage = TokenStorage();
     _loadUserInfo();
   }
 
   Future<void> _loadUserInfo() async {
-    final email = await _tokenStorage.getEmail();
+    final email = await ServiceLocator.tokenStorage.getEmail();
     setState(() {
       _userEmail = email;
       _userName = email?.split('@').first ?? 'Manager';
@@ -29,7 +27,7 @@ class _MealManagerHomePageState extends State<MealManagerHomePage> {
   }
 
   Future<void> _handleLogout() async {
-    await _tokenStorage.clearAll();
+    await ServiceLocator.tokenStorage.clearAll();
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/login');
   }
@@ -44,10 +42,7 @@ class _MealManagerHomePageState extends State<MealManagerHomePage> {
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
-              PopupMenuItem(
-                onTap: _handleLogout,
-                child: const Text('Logout'),
-              ),
+              PopupMenuItem(onTap: _handleLogout, child: const Text('Logout')),
             ],
           ),
         ],
@@ -60,11 +55,7 @@ class _MealManagerHomePageState extends State<MealManagerHomePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.restaurant_menu,
-                  size: 64,
-                  color: scheme.primary,
-                ),
+                Icon(Icons.restaurant_menu, size: 64, color: scheme.primary),
                 const SizedBox(height: 16),
                 Text(
                   'Meal Manager Dashboard',

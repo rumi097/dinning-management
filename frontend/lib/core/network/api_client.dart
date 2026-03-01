@@ -7,7 +7,7 @@ class ApiClient {
   final TokenStorage _tokenStorage;
 
   ApiClient({TokenStorage? tokenStorage})
-      : _tokenStorage = tokenStorage ?? TokenStorage() {
+    : _tokenStorage = tokenStorage ?? TokenStorage() {
     _initializeDio();
   }
 
@@ -15,10 +15,15 @@ class ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(milliseconds: ApiConstants.connectTimeout),
-        receiveTimeout: const Duration(milliseconds: ApiConstants.receiveTimeout),
+        connectTimeout: const Duration(
+          milliseconds: ApiConstants.connectTimeout,
+        ),
+        receiveTimeout: const Duration(
+          milliseconds: ApiConstants.receiveTimeout,
+        ),
         headers: {
-          ApiConstants.contentTypeHeader: ApiConstants.applicationJsonContentType,
+          ApiConstants.contentTypeHeader:
+              ApiConstants.applicationJsonContentType,
         },
       ),
     );
@@ -157,6 +162,8 @@ class ApiClient {
         return 'An unexpected error occurred.';
       case DioExceptionType.badCertificate:
         return 'Bad certificate error.';
+      default:
+        return 'An unexpected error occurred.';
     }
   }
 }
