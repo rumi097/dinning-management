@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.*;
 
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
+import dsi.ruet.backend.dto.admin.AddHallRequest;
 import dsi.ruet.backend.models.User;
+import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.services.AdminService;
 import jakarta.validation.Valid;
 
@@ -55,6 +57,15 @@ public class AdminController {
     @DeleteMapping("/user")
     public ResponseEntity<ApiResponse<Void>> deleteUserByEmail(@RequestParam String email) {
         ApiResponse<Void> response = adminService.deleteUserByEmail(email);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Add a new hall to the system
+     */
+    @PostMapping("/add-hall")
+    public ResponseEntity<ApiResponse<Hall>> addHall(@Valid @RequestBody AddHallRequest request) {
+        ApiResponse<Hall> response = adminService.addHall(request);
         return ResponseEntity.ok(response);
     }
 }

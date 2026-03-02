@@ -14,6 +14,7 @@ public class AuthResponse {
     private String name;
     private Long userId;
     private Long hallId;           // For ALL users (from User table)
+    private String hallName;       // Hall name (from Hall table)
     
     // StudentInfo fields (only populated for STUDENT role)
     private String roll;           // Student roll number

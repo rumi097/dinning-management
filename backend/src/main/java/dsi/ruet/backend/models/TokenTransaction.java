@@ -7,37 +7,35 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a token transfer transaction between two users.
+ * Maps to the {@code token_transactions} table in the database.
+ */
 @Entity
-@Table(name = "tokens")
+@Table(name = "token_transactions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Token {
+public class TokenTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meal_id", nullable = false)
-    private Meal meal;
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private TokenStatus status = TokenStatus.AVAILABLE;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "token_id", nullable = false)
+    private Token token;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @Column(name = "used_at")
-    private LocalDateTime usedAt;
-
-    @Column(name = "qr_code", length = 100)
-    private String qrCode;
 
     @PrePersist
     protected void onCreate() {
