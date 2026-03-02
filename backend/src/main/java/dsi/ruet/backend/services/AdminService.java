@@ -2,12 +2,15 @@ package dsi.ruet.backend.services;
 
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
+import dsi.ruet.backend.dto.admin.AddHallRequest;
 import dsi.ruet.backend.exception.DuplicateEmailException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
+import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
+import dsi.ruet.backend.repositories.HallRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,9 @@ public class AdminService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
+
+    @Autowired
+    private HallRepository hallRepository;
     @Transactional
     public ApiResponse<User> addUser(AddUserRequest request) {
         // Check if email already exists
@@ -71,5 +77,24 @@ public class AdminService {
         // Then delete the user
         userRepository.delete(user);
         return new ApiResponse<>("User deleted successfully", null);
+    }
+
+    /**
+     * Add a new hall to the system
+     */
+    @Transactional
+    public ApiResponse<Hall> addHall(AddHallRequest request) {
+        // Check if hall with same name already exists
+        if (hallRepository.findByName(request.getName()).isPresent()) {
+            throw new IllegalArgumentException("Hall with name '" + request.getName() + "' already exists");
+        }
+
+        // Create new hall
+        Hall hall = new Hall();
+        hall.setName(request.getName());
+        
+        // Save and return
+        Hall savedHall = hallRepository.save(hall);
+        return new ApiResponse<>("Hall added successfully", savedHall);
     }
 }

@@ -10,8 +10,10 @@ import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
+import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
+import dsi.ruet.backend.repositories.HallRepository;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,9 @@ public class AuthenticationService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
+
+    @Autowired
+    private HallRepository hallRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -168,6 +173,14 @@ public class AuthenticationService {
         response.setUserId(user.getId());
         response.setName(user.getName());
         response.setHallId(user.getHallId());  // Include for all users
+        
+        // Fetch and include hall name if hallId is present
+        if (user.getHallId() != null) {
+            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
+            if (hall != null) {
+                response.setHallName(hall.getName());
+            }
+        }
 
         // If student role, include StudentInfo
         if ("STUDENT".equals(user.getRole())) {
@@ -199,6 +212,14 @@ public class AuthenticationService {
         response.setName(user.getName());
         response.setHallId(user.getHallId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
+        
+        // Fetch and include hall name if hallId is present
+        if (user.getHallId() != null) {
+            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
+            if (hall != null) {
+                response.setHallName(hall.getName());
+            }
+        }
 
         // If student role, include StudentInfo
         if ("STUDENT".equals(user.getRole())) {
