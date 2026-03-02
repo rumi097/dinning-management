@@ -4,8 +4,11 @@ import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
 import dsi.ruet.backend.exception.DuplicateEmailException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
+import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
+import dsi.ruet.backend.models.enums.Role;
+import dsi.ruet.backend.repositories.HallRepository;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,9 @@ public class AdminService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
+
+    @Autowired
+    private HallRepository hallRepository;
     @Transactional
     public ApiResponse<User> addUser(AddUserRequest request) {
         // Check if email already exists
@@ -34,9 +40,13 @@ public class AdminService {
         user.setEmail(request.getEmail());
         user.setPassword("CHANGE_THIS");
         user.setName("CHANGE_THIS");
-        user.setHallId(request.getHallId());
+        if (request.getHallId() != null) {
+            Hall hall = hallRepository.findById(request.getHallId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + request.getHallId()));
+            user.setHall(hall);
+        }
         user.setIsVerified(false);
-        user.setRole(request.getRole() != null ? request.getRole() : "STUDENT");
+        user.setRole(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.STUDENT);
         
         user = userRepository.save(user);
         

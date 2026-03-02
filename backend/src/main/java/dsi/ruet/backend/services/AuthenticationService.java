@@ -164,13 +164,13 @@ public class AuthenticationService {
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
+        response.setHallId(user.getHall().getId());  // Include for all users
 
         // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -194,14 +194,14 @@ public class AuthenticationService {
         // Build response with user info
         AuthResponse response = new AuthResponse();
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
+        response.setHallId(user.getHall().getId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
 
         // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
