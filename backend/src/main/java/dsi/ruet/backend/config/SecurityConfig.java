@@ -15,11 +15,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Spring Security configuration.
+ * - Public endpoints: /auth/signup, /auth/login
+ * - Admin endpoints: /admin/** (permitAll for now)
+ * - Meal Manager endpoints: /api/v1/** (requires MEAL_MANAGER role)
+ * - Everything else: requires authentication
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig {
-
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -42,8 +48,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/signup", "/auth/login").permitAll()
                         .requestMatchers("/admin/**").permitAll()
+                        // Meal manager APIs under /api/v1
+                        .requestMatchers("/api/v1/**").hasRole("MEAL_MANAGER")
                         .requestMatchers("/auth/**").authenticated()
-                    .anyRequest().authenticated()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
