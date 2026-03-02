@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler {
+public class MarketplaceExceptionHandler {
 
     @ExceptionHandler(MarketplaceException.class)
     public ResponseEntity<ApiResponse<Void>> handleMarketplaceException(MarketplaceException ex) {

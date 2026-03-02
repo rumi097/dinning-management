@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * Remove when auth & real feature modules are integrated.
  */
 @RestController
-@RequestMapping("/api/v1/test")
+@RequestMapping("/test")
 @RequiredArgsConstructor
 public class TestHelperController {
 
