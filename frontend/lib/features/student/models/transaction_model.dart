@@ -7,6 +7,7 @@ class TransactionData {
   final String time;
   final int amount; // positive = credit (sold), negative = debit (purchased)
   final String tag; // 'Purchased' | 'Sold'
+  final String paymentMethod; // 'cash' | 'credit'
 
   const TransactionData({
     required this.status,
@@ -16,6 +17,7 @@ class TransactionData {
     required this.time,
     required this.amount,
     required this.tag,
+    this.paymentMethod = 'credit',
   });
 
   factory TransactionData.fromJson(Map<String, dynamic> json) =>
@@ -27,6 +29,7 @@ class TransactionData {
         time: json['time'] as String,
         amount: json['amount'] as int,
         tag: json['tag'] as String,
+        paymentMethod: json['paymentMethod'] as String? ?? 'credit',
       );
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +40,7 @@ class TransactionData {
         'time': time,
         'amount': amount,
         'tag': tag,
+        'paymentMethod': paymentMethod,
       };
 
   /// Whether this transaction is a credit (incoming money).

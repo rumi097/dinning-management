@@ -76,6 +76,25 @@ class TransactionTile extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (data.paymentMethod == 'cash' ? Colors.orange : Colors.blue)
+                          .withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      data.paymentMethod == 'cash' ? 'Cash' : 'Credit',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: data.paymentMethod == 'cash'
+                            ? Colors.orange.shade700
+                            : Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

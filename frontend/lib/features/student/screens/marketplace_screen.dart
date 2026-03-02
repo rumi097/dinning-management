@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../services/student_api_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MarketplaceScreen extends StatefulWidget {
-  const MarketplaceScreen({super.key});
+  final StudentApiService apiService;
+
+  const MarketplaceScreen({super.key, required this.apiService});
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -77,7 +80,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // API INTEGRATION STRUCTURE (placeholder fetch + dummy seed)
+  // API INTEGRATION (real API calls via StudentApiService)
   // ───────────────────────────────────────────────────────────────────────────
 
   Future<void> _loadData() async {
@@ -86,223 +89,337 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       _errorMessage = null;
     });
 
-    try {
-      final results = await Future.wait([
-        getOpenPosts(),
-        getMyTokens(),
-        getMyListings(),
-        getMyPurchases(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        openPosts = results[0] as List<MarketplacePost>;
-        myTokens = results[1] as List<MyToken>;
-        myListings = results[2] as List<MyListing>;
-        myPurchases = results[3] as List<MyPurchase>;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Failed to load data. Pull to retry.';
-        _isLoading = false;
-      });
-    }
-  }
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   final results = await Future.wait([
+    //     widget.apiService.getMarketplacePosts(),
+    //     widget.apiService.getMarketplaceMyTokens(),
+    //     widget.apiService.getMyListings(),
+    //     widget.apiService.getMyPurchases(),
+    //   ]);
+    //   if (!mounted) return;
+    //   setState(() {
+    //     openPosts = results[0] as List<MarketplacePost>;
+    //     myTokens = results[1] as List<MyToken>;
+    //     myListings = results[2] as List<MyListing>;
+    //     myPurchases = results[3] as List<MyPurchase>;
+    //     _isLoading = false;
+    //   });
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   setState(() {
+    //     _errorMessage = 'Failed to load data. Pull to retry.';
+    //     _isLoading = false;
+    //   });
+    // }
 
-  // --- Placeholder API calls (replace with real http calls later) ----------
-
-  Future<List<MarketplacePost>> getOpenPosts() async {
-    // TODO: Replace with actual API call → GET /api/marketplace/posts
-    await Future.delayed(const Duration(milliseconds: 400));
-    return const [
-      MarketplacePost(
-        postId: 'post-001',
-        sellerName: 'Aarav Sharma',
-        mealType: 'Lunch',
-        hallName: 'Dining Hall A',
-        mealTime: '12:30 PM - 2:00 PM',
-        mealPrice: 50,
-        avatarColor: Colors.blue,
-        studentId: 'STU-2024-001',
-        mobile: '+880 1712-345678',
-        roomNo: 'A-301',
-      ),
-      MarketplacePost(
-        postId: 'post-002',
-        sellerName: 'Priya Patel',
-        mealType: 'Dinner',
-        hallName: 'Dining Hall B',
-        mealTime: '7:30 PM - 9:00 PM',
-        mealPrice: 50,
-        avatarColor: Colors.purple,
-        studentId: 'STU-2024-002',
-        mobile: '+880 1798-765432',
-        roomNo: 'B-215',
-      ),
-      MarketplacePost(
-        postId: 'post-003',
-        sellerName: 'Rohan Mehta',
-        mealType: 'Lunch',
-        hallName: 'Dining Hall A',
-        mealTime: '12:30 PM - 2:00 PM',
-        mealPrice: 50,
-        avatarColor: Colors.teal,
-        studentId: 'STU-2024-003',
-        mobile: '+880 1654-321987',
-        roomNo: 'A-118',
-      ),
-      MarketplacePost(
-        postId: 'post-004',
-        sellerName: 'Sneha Gupta',
-        mealType: 'Dinner',
-        hallName: 'Dining Hall C',
-        mealTime: '7:30 PM - 9:00 PM',
-        mealPrice: 50,
-        avatarColor: Colors.orange,
-        studentId: 'STU-2024-004',
-        mobile: '+880 1876-543210',
-        roomNo: 'C-402',
-      ),
-      MarketplacePost(
-        postId: 'post-005',
-        sellerName: 'Vikram Singh',
-        mealType: 'Lunch',
-        hallName: 'Dining Hall B',
-        mealTime: '12:30 PM - 2:00 PM',
-        mealPrice: 50,
-        avatarColor: Colors.indigo,
-        studentId: 'STU-2024-005',
-        mobile: '+880 1945-678901',
-        roomNo: 'B-310',
-      ),
-    ];
-  }
-
-  Future<List<MyToken>> getMyTokens() async {
-    // TODO: Replace with actual API call → GET /api/student/tokens
+    // --- Dummy data (remove when backend is ready) ---
     await Future.delayed(const Duration(milliseconds: 300));
-    return const [
-      MyToken(
-        tokenId: 'tkn-101',
-        mealType: 'Lunch',
-        date: '01 Mar 2026',
-        price: 50,
-        status: 'AVAILABLE',
-      ),
-      MyToken(
-        tokenId: 'tkn-102',
-        mealType: 'Dinner',
-        date: '01 Mar 2026',
-        price: 60,
-        status: 'LISTED',
-      ),
-      MyToken(
-        tokenId: 'tkn-103',
-        mealType: 'Lunch',
-        date: '02 Mar 2026',
-        price: 50,
-        status: 'USED',
-      ),
-    ];
+    if (!mounted) return;
+    setState(() {
+      openPosts = [
+        MarketplacePost(
+          postId: 'POST-001',
+          sellerName: 'Rahim Uddin',
+          mealType: 'Lunch',
+          hallName: 'Shahid Minar Hall',
+          mealTime: '12:30 PM',
+          mealPrice: 55,
+          avatarColor: Colors.blue,
+          studentId: 'STU-101',
+          mobile: '01712345678',
+          roomNo: '305',
+        ),
+        MarketplacePost(
+          postId: 'POST-002',
+          sellerName: 'Karim Hasan',
+          mealType: 'Dinner',
+          hallName: 'Bangabandhu Hall',
+          mealTime: '7:30 PM',
+          mealPrice: 50,
+          avatarColor: Colors.green,
+          studentId: 'STU-102',
+          mobile: '01898765432',
+          roomNo: '210',
+        ),
+        MarketplacePost(
+          postId: 'POST-003',
+          sellerName: 'Nusrat Jahan',
+          mealType: 'Lunch',
+          hallName: 'Rokeya Hall',
+          mealTime: '12:30 PM',
+          mealPrice: 60,
+          avatarColor: Colors.purple,
+          studentId: 'STU-103',
+          mobile: '01556781234',
+          roomNo: '412',
+        ),
+      ];
+      myTokens = const [
+        MyToken(
+          tokenId: 'TKN-010',
+          mealType: 'Lunch',
+          date: '2025-01-16',
+          price: 50,
+          status: 'AVAILABLE',
+        ),
+        MyToken(
+          tokenId: 'TKN-011',
+          mealType: 'Dinner',
+          date: '2025-01-16',
+          price: 50,
+          status: 'LISTED',
+        ),
+      ];
+      myListings = [
+        MyListing(
+          listingId: 'LST-001',
+          mealType: 'Dinner',
+          buyerName: 'Fahim Ahmed',
+          price: 55,
+          status: 'PENDING',
+          pendingSince: DateTime.now().subtract(const Duration(minutes: 5)),
+        ),
+        const MyListing(
+          listingId: 'LST-002',
+          mealType: 'Lunch',
+          buyerName: '',
+          price: 50,
+          status: 'OPEN',
+        ),
+      ];
+      myPurchases = [
+        MyPurchase(
+          purchaseId: 'PUR-001',
+          sellerName: 'Rahim Uddin',
+          mealType: 'Lunch',
+          price: 55,
+          status: 'PENDING',
+          pendingSince: DateTime.now().subtract(const Duration(minutes: 3)),
+        ),
+      ];
+      _isLoading = false;
+    });
   }
 
-  Future<List<MyListing>> getMyListings() async {
-    // TODO: Replace with actual API call → GET /api/marketplace/my-listings
-    await Future.delayed(const Duration(milliseconds: 350));
-    final now = DateTime.now();
-    return [
-      const MyListing(
-        listingId: 'lst-201',
-        mealType: 'Lunch',
-        buyerName: '',
-        price: 50,
-        status: 'OPEN',
-      ),
-      MyListing(
-        listingId: 'lst-202',
-        mealType: 'Dinner',
-        buyerName: 'Priya Patel',
-        price: 60,
-        status: 'PENDING',
-        pendingSince: now.subtract(const Duration(minutes: 5)),
-      ),
-      const MyListing(
-        listingId: 'lst-203',
-        mealType: 'Lunch',
-        buyerName: 'Rohan Mehta',
-        price: 50,
-        status: 'COMPLETED',
-      ),
-    ];
-  }
+  // --- Action methods (real API calls) ---
 
-  Future<List<MyPurchase>> getMyPurchases() async {
-    // TODO: Replace with actual API call → GET /api/marketplace/my-purchases
-    await Future.delayed(const Duration(milliseconds: 350));
-    final now = DateTime.now();
-    return [
-      MyPurchase(
-        purchaseId: 'pur-301',
-        sellerName: 'Aarav Sharma',
-        mealType: 'Lunch',
-        price: 50,
-        status: 'PENDING',
-        pendingSince: now.subtract(const Duration(minutes: 3)),
-      ),
-      const MyPurchase(
-        purchaseId: 'pur-302',
-        sellerName: 'Sneha Gupta',
-        mealType: 'Dinner',
-        price: 60,
-        status: 'CONFIRMED',
-      ),
-    ];
-  }
+  Future<void> sendBuyRequest(String postId, {required String paymentMethod}) async {
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   await widget.apiService.sendBuyRequest(postId, paymentMethod: paymentMethod);
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Buy request sent ($paymentMethod)')),
+    //   );
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Buy request failed: $e'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    // }
 
-  // --- Action placeholders ---------------------------------------------------
-
-  Future<void> sendBuyRequest(String postId) async {
-    // TODO: POST /api/marketplace/buy { postId }
+    // --- Dummy action (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Buy request sent for post $postId')),
+      SnackBar(content: Text('Buy request sent via $paymentMethod (dummy)')),
     );
     await _loadData();
   }
 
+  /// Shows a bottom-sheet to choose Cash or Credit Transfer, then sends buy request.
+  void _showPaymentMethodPicker(String postId) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Choose Payment Method',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Cash option
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.money, color: Colors.green),
+                  ),
+                  title: const Text('Cash'),
+                  subtitle: const Text('Pay with cash on delivery'),
+                  trailing: const Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    sendBuyRequest(postId, paymentMethod: 'cash');
+                  },
+                ),
+                const SizedBox(height: 8),
+                // Credit Transfer option
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet, color: Colors.blue),
+                  ),
+                  title: const Text('Credit Transfer'),
+                  subtitle: const Text('Pay from wallet balance'),
+                  trailing: const Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    sendBuyRequest(postId, paymentMethod: 'credit');
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> confirmListing(String listingId) async {
-    // TODO: POST /api/marketplace/listings/$listingId/confirm
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   await widget.apiService.confirmListing(listingId);
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Listing $listingId confirmed')),
+    //   );
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Confirm failed: $e'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    // }
+
+    // --- Dummy action (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Listing $listingId confirmed')),
+      SnackBar(content: Text('Listing $listingId confirmed (dummy)')),
     );
     await _loadData();
   }
 
   Future<void> rejectListing(String listingId) async {
-    // TODO: POST /api/marketplace/listings/$listingId/reject
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   await widget.apiService.rejectListing(listingId);
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Listing $listingId rejected')),
+    //   );
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Reject failed: $e'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    // }
+
+    // --- Dummy action (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Listing $listingId rejected')),
+      SnackBar(content: Text('Listing $listingId rejected (dummy)')),
     );
     await _loadData();
   }
 
   Future<void> cancelPurchase(String purchaseId) async {
-    // TODO: POST /api/marketplace/purchases/$purchaseId/cancel
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   await widget.apiService.cancelPurchase(purchaseId);
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Purchase $purchaseId cancelled')),
+    //   );
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Cancel failed: $e'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    // }
+
+    // --- Dummy action (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Purchase $purchaseId cancelled')),
+      SnackBar(content: Text('Purchase $purchaseId cancelled (dummy)')),
     );
     await _loadData();
   }
 
   Future<void> sellToken(String tokenId) async {
-    // TODO: POST /api/marketplace/sell { tokenId }
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   await widget.apiService.sellToken(
+    //     CreateSellRequest(tokenId: tokenId, price: 50),
+    //   );
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Token $tokenId listed for sale')),
+    //   );
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Sell failed: $e'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    // }
+
+    // --- Dummy action (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Token $tokenId listed for sale')),
+      SnackBar(content: Text('Token $tokenId listed for sale (dummy)')),
     );
     await _loadData();
   }
@@ -386,64 +503,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     }).toList();
   }
 
-  /// Shows a floating profile card for a seller.
+  /// Shows a floating profile card for a seller, fetched from API.
   void _showSellerProfile(MarketplacePost post) {
     showDialog(
       context: context,
       builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: post.avatarColor.withOpacity(0.2),
-                  child: Text(
-                    post.sellerName[0],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                      color: post.avatarColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  post.sellerName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _profileRow(theme, Icons.badge_outlined, 'Student ID', post.studentId),
-                const SizedBox(height: 10),
-                _profileRow(theme, Icons.phone_outlined, 'Mobile', post.mobile),
-                const SizedBox(height: 10),
-                _profileRow(theme, Icons.apartment_outlined, 'Hall Name', post.hallName),
-                const SizedBox(height: 10),
-                _profileRow(theme, Icons.door_front_door_outlined, 'Room No', post.roomNo),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _SellerProfileDialog(
+          apiService: widget.apiService,
+          post: post,
         );
       },
     );
@@ -675,7 +742,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
 
                               // Buy Now button
                               FilledButton(
-                                onPressed: () => sendBuyRequest(req.postId),
+                                onPressed: () => _showPaymentMethodPicker(req.postId),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: Colors.green,
                                   padding: const EdgeInsets.symmetric(
@@ -1311,6 +1378,179 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELLER PROFILE DIALOG (fetches from API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SellerProfileDialog extends StatefulWidget {
+  final StudentApiService apiService;
+  final MarketplacePost post;
+
+  const _SellerProfileDialog({
+    required this.apiService,
+    required this.post,
+  });
+
+  @override
+  State<_SellerProfileDialog> createState() => _SellerProfileDialogState();
+}
+
+class _SellerProfileDialogState extends State<_SellerProfileDialog> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  StudentProfile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    // TODO: Uncomment when backend is ready
+    // setState(() {
+    //   _isLoading = true;
+    //   _errorMessage = null;
+    // });
+    //
+    // try {
+    //   final profile =
+    //       await widget.apiService.getSellerProfile(widget.post.studentId);
+    //   if (!mounted) return;
+    //   setState(() {
+    //     _profile = profile;
+    //     _isLoading = false;
+    //   });
+    // } catch (_) {
+    //   if (!mounted) return;
+    //   setState(() {
+    //     _isLoading = false;
+    //     _errorMessage = null;
+    //     _profile = null;
+    //   });
+    // }
+
+    // --- Dummy: skip API, use post data directly ---
+    setState(() {
+      _isLoading = false;
+      _profile = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final post = widget.post;
+
+    // Use API data if available, fallback to post data
+    final name = _profile?.name ?? post.sellerName;
+    final studentId = _profile?.roll ?? post.studentId;
+    final mobile = _profile?.phoneNo ?? post.mobile;
+    final hallName = _profile?.hallName ?? post.hallName;
+    final roomNo = _profile?.roomNo ?? post.roomNo;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: _isLoading
+            ? const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 24),
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading profile...'),
+                  SizedBox(height: 24),
+                ],
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: post.avatarColor.withOpacity(0.2),
+                    child: Text(
+                      name.isNotEmpty ? name[0] : '?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                        color: post.avatarColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _errorMessage!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  _profileRow(theme, Icons.badge_outlined, 'Student ID', studentId),
+                  const SizedBox(height: 10),
+                  _profileRow(theme, Icons.phone_outlined, 'Mobile', mobile),
+                  const SizedBox(height: 10),
+                  _profileRow(theme, Icons.apartment_outlined, 'Hall Name', hallName),
+                  const SizedBox(height: 10),
+                  _profileRow(theme, Icons.door_front_door_outlined, 'Room No', roomNo ?? 'N/A'),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _profileRow(ThemeData theme, IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

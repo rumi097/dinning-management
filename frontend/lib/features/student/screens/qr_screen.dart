@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/models.dart';
+import '../services/student_api_service.dart';
 
 class QrScreen extends StatefulWidget {
-  const QrScreen({super.key});
+  final StudentApiService apiService;
+
+  const QrScreen({super.key, required this.apiService});
 
   @override
   State<QrScreen> createState() => _QrScreenState();
@@ -11,27 +14,67 @@ class QrScreen extends StatefulWidget {
 
 class _QrScreenState extends State<QrScreen> {
   String? _activeTokenId;
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<TokenInfo> _tokens = [];
 
-  final List<TokenInfo> _tokens = const [
-    TokenInfo(
-      tokenId: 'TKN-2026-0301-LUN-4821',
-      tokenType: 'Lunch Token',
-      date: '01 Mar 2026',
-      hall: 'Dining Hall A',
-      time: '12:30 PM - 2:00 PM',
-      status: 'Valid Today',
-      isValid: true,
-    ),
-    TokenInfo(
-      tokenId: 'TKN-2026-0302-DIN-7653',
-      tokenType: 'Dinner Token',
-      date: '02 Mar 2026',
-      hall: 'Dining Hall B',
-      time: '7:30 PM - 9:00 PM',
-      status: 'Valid Tomorrow',
-      isValid: false,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadTokens();
+  }
+
+  Future<void> _loadTokens() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // TODO: Uncomment when backend is ready
+    // try {
+    //   final tokenModels = await widget.apiService.getMyTokens();
+    //   if (!mounted) return;
+    //   setState(() {
+    //     _tokens = tokenModels
+    //         .map((t) => TokenInfo.fromTokenModel(t))
+    //         .toList();
+    //     _isLoading = false;
+    //   });
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   setState(() {
+    //     _errorMessage = 'Failed to load tokens. Pull to retry.';
+    //     _isLoading = false;
+    //   });
+    // }
+
+    // --- Dummy data (remove when backend is ready) ---
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    setState(() {
+      _tokens = const [
+        TokenInfo(
+          tokenId: 'TKN-001',
+          tokenType: 'Lunch Token',
+          date: '2025-01-15',
+          hall: 'Shahid Minar Hall',
+          time: '12:30 PM - 2:00 PM',
+          status: 'Valid',
+          isValid: true,
+        ),
+        TokenInfo(
+          tokenId: 'TKN-002',
+          tokenType: 'Dinner Token',
+          date: '2025-01-15',
+          hall: 'Bangabandhu Hall',
+          time: '7:30 PM - 9:00 PM',
+          status: 'Used',
+          isValid: false,
+        ),
+      ];
+      _isLoading = false;
+    });
+  }
 
   void _onUseNow(TokenInfo token) {
     setState(() {
@@ -53,29 +96,77 @@ class _QrScreenState extends State<QrScreen> {
       appBar: AppBar(
         title: const Text('My Tokens'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- QR Code Display (shown when a token is activated) ---
-            if (_activeTokenId != null) ...[
-              _buildQrSection(theme),
-              const SizedBox(height: 24),
-            ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? _buildError(theme)
+              : RefreshIndicator(
+                  onRefresh: _loadTokens,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // --- QR Code Display (shown when a token is activated) ---
+                        if (_activeTokenId != null) ...[
+                          _buildQrSection(theme),
+                          const SizedBox(height: 24),
+                        ],
 
-            // --- Tokens Section ---
-            Text(
-              'Your Tokens',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                        // --- Tokens Section ---
+                        Text(
+                          'Your Tokens',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_tokens.isEmpty)
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Center(
+                                child: Text(
+                                  'No tokens available',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ..._tokens.map((token) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _buildTokenCard(theme, token),
+                              )),
+                      ],
+                    ),
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildError(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline,
+                size: 48, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(_errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _loadTokens,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
             ),
-            const SizedBox(height: 12),
-            ..._tokens.map((token) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _buildTokenCard(theme, token),
-                )),
           ],
         ),
       ),

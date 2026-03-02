@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../services/student_api_service.dart';
 import 'dashboard_screen.dart';
 import 'marketplace_screen.dart';
 import 'history_screen.dart';
 import 'qr_screen.dart';
 
 class StudentHome extends StatefulWidget {
-  const StudentHome({super.key});
+  final String token;
+
+  const StudentHome({super.key, required this.token});
 
   @override
   State<StudentHome> createState() => _StudentHomeState();
@@ -13,13 +16,20 @@ class StudentHome extends StatefulWidget {
 
 class _StudentHomeState extends State<StudentHome> {
   int _currentIndex = 0;
+  late final StudentApiService _apiService;
+  late final List<Widget> _screens;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    QrScreen(),
-    MarketplaceScreen(),
-    HistoryScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _apiService = StudentApiService(token: widget.token);
+    _screens = [
+      DashboardScreen(apiService: _apiService),
+      QrScreen(apiService: _apiService),
+      MarketplaceScreen(apiService: _apiService),
+      HistoryScreen(apiService: _apiService),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

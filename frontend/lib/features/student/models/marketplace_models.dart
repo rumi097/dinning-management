@@ -359,16 +359,21 @@ class CreateSellRequest {
 /// Request to buy a token from the marketplace.
 class BuyFromMarketplaceRequest {
   final String listingId;
+  final String paymentMethod; // 'cash' or 'credit'
 
-  const BuyFromMarketplaceRequest({required this.listingId});
+  const BuyFromMarketplaceRequest({
+    required this.listingId,
+    required this.paymentMethod,
+  });
 
   Map<String, dynamic> toJson() => {
         'listingId': listingId,
+        'paymentMethod': paymentMethod,
       };
 
   @override
   String toString() =>
-      'BuyFromMarketplaceRequest(listingId: $listingId)';
+      'BuyFromMarketplaceRequest(listingId: $listingId, paymentMethod: $paymentMethod)';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

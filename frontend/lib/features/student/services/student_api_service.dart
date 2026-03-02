@@ -3,142 +3,245 @@ import 'package:http/http.dart' as http;
 import '../models/models.dart';
 
 class StudentApiService {
-  static const String _baseUrl = 'http://localhost:3000/api'; // change to your backend
+  static const String _baseUrl = 'http://10.0.2.2:8080/api'; // Android emulator → localhost
   final String _token;
 
   StudentApiService({required String token}) : _token = token;
 
   Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $_token',
-  };
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      };
 
   // ==================== AUTH ====================
 
-  static Future<LoginResponse> login(LoginRequest request) async {
+  static Future<AuthResponse> login(LoginRequest request) async {
     final res = await http.post(
       Uri.parse('$_baseUrl/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(request.toJson()),
     );
     if (res.statusCode == 200) {
-      return LoginResponse.fromJson(jsonDecode(res.body));
+      return AuthResponse.fromJson(jsonDecode(res.body));
     }
     throw Exception('Login failed: ${res.body}');
   }
 
-  // ==================== WALLET ====================
+  static Future<AuthResponse> signup(SignupRequest request) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/auth/signup'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(request.toJson()),
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return AuthResponse.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('Signup failed: ${res.body}');
+  }
 
-  Future<WalletResponse> getWalletBalance() async {
+  Future<AuthResponse> getMe() async {
     final res = await http.get(
-      Uri.parse('$_baseUrl/wallet/balance'),
+      Uri.parse('$_baseUrl/auth/me'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
-      return WalletResponse.fromJson(jsonDecode(res.body));
+      return AuthResponse.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('Failed to fetch user info');
+  }
+
+  // ==================== WALLET ====================
+
+  Future<WalletModel> getWalletBalance() async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/wallet/me'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      return WalletModel.fromJson(jsonDecode(res.body));
     }
     throw Exception('Failed to fetch wallet balance');
   }
 
+  Future<WalletModel> topUpWallet(WalletTopUpRequest request) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/wallet/topup'),
+      headers: _headers,
+      body: jsonEncode(request.toJson()),
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return WalletModel.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('Top-up failed: ${res.body}');
+  }
+
   // ==================== TOKENS ====================
 
-  Future<List<TokenResponse>> getMyTokens() async {
+  Future<List<TokenModel>> getMyTokens() async {
     final res = await http.get(
-      Uri.parse('$_baseUrl/tokens/my'),
+      Uri.parse('$_baseUrl/students/me/tokens'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => TokenResponse.fromJson(e)).toList();
+      return data.map((e) => TokenModel.fromJson(e)).toList();
     }
     throw Exception('Failed to fetch tokens');
   }
 
-  Future<List<AvailableTokenResponse>> getAvailableTokens() async {
+  Future<List<AvailableToken>> getAvailableTokens() async {
     final res = await http.get(
       Uri.parse('$_baseUrl/tokens/available'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => AvailableTokenResponse.fromJson(e)).toList();
+      return data.map((e) => AvailableToken.fromJson(e)).toList();
     }
     throw Exception('Failed to fetch available tokens');
   }
 
-  Future<TokenResponse> purchaseToken(PurchaseTokenRequest request) async {
+  Future<TokenModel> purchaseToken(PurchaseTokenRequest request) async {
     final res = await http.post(
       Uri.parse('$_baseUrl/tokens/purchase'),
       headers: _headers,
       body: jsonEncode(request.toJson()),
     );
     if (res.statusCode == 200 || res.statusCode == 201) {
-      return TokenResponse.fromJson(jsonDecode(res.body));
+      return TokenModel.fromJson(jsonDecode(res.body));
     }
     throw Exception('Purchase failed: ${res.body}');
   }
 
   // ==================== MENU ====================
 
-  Future<List<MenuResponse>> getTodayMenu() async {
+  Future<List<MenuModel>> getTodayMenu() async {
     final res = await http.get(
       Uri.parse('$_baseUrl/menu/today'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => MenuResponse.fromJson(e)).toList();
+      return data.map((e) => MenuModel.fromJson(e)).toList();
     }
     throw Exception('Failed to fetch menu');
   }
 
-  Future<List<MenuResponse>> getFullMenu() async {
+  Future<List<MenuModel>> getFullMenu() async {
     final res = await http.get(
       Uri.parse('$_baseUrl/menu/full'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => MenuResponse.fromJson(e)).toList();
+      return data.map((e) => MenuModel.fromJson(e)).toList();
     }
     throw Exception('Failed to fetch full menu');
   }
 
   // ==================== MARKETPLACE ====================
 
-  Future<List<MarketplaceListingResponse>> getMarketplaceListings() async {
+  Future<List<MarketplacePost>> getMarketplacePosts() async {
     final res = await http.get(
-      Uri.parse('$_baseUrl/marketplace/listings'),
+      Uri.parse('$_baseUrl/marketplace/posts'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => MarketplaceListingResponse.fromJson(e)).toList();
+      return data.map((e) => MarketplacePost.fromJson(e)).toList();
     }
-    throw Exception('Failed to fetch marketplace');
+    throw Exception('Failed to fetch marketplace posts');
   }
 
-  Future<MarketplaceListingResponse> createSellRequest(CreateSellRequest request) async {
+  Future<List<MyToken>> getMarketplaceMyTokens() async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/marketplace/my-tokens'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => MyToken.fromJson(e)).toList();
+    }
+    throw Exception('Failed to fetch my tokens');
+  }
+
+  Future<List<MyListing>> getMyListings() async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/marketplace/my-listings'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => MyListing.fromJson(e)).toList();
+    }
+    throw Exception('Failed to fetch my listings');
+  }
+
+  Future<List<MyPurchase>> getMyPurchases() async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/marketplace/my-purchases'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => MyPurchase.fromJson(e)).toList();
+    }
+    throw Exception('Failed to fetch my purchases');
+  }
+
+  Future<void> sendBuyRequest(String postId, {required String paymentMethod}) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/marketplace/buy'),
+      headers: _headers,
+      body: jsonEncode({
+        'postId': postId,
+        'paymentMethod': paymentMethod,
+      }),
+    );
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception('Buy request failed: ${res.body}');
+    }
+  }
+
+  Future<void> sellToken(CreateSellRequest request) async {
     final res = await http.post(
       Uri.parse('$_baseUrl/marketplace/sell'),
       headers: _headers,
       body: jsonEncode(request.toJson()),
     );
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      return MarketplaceListingResponse.fromJson(jsonDecode(res.body));
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception('Sell request failed: ${res.body}');
     }
-    throw Exception('Sell request failed: ${res.body}');
   }
 
-  Future<TokenResponse> buyFromMarketplace(String listingId) async {
+  Future<void> confirmListing(String listingId) async {
     final res = await http.post(
-      Uri.parse('$_baseUrl/marketplace/buy/$listingId'),
+      Uri.parse('$_baseUrl/marketplace/listings/$listingId/confirm'),
       headers: _headers,
     );
-    if (res.statusCode == 200) {
-      return TokenResponse.fromJson(jsonDecode(res.body));
+    if (res.statusCode != 200) {
+      throw Exception('Confirm failed: ${res.body}');
     }
-    throw Exception('Marketplace buy failed: ${res.body}');
+  }
+
+  Future<void> rejectListing(String listingId) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/marketplace/listings/$listingId/reject'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Reject failed: ${res.body}');
+    }
+  }
+
+  Future<void> cancelPurchase(String purchaseId) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/marketplace/purchases/$purchaseId/cancel'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Cancel failed: ${res.body}');
+    }
   }
 
   Future<void> cancelSellRequest(String listingId) async {
@@ -147,21 +250,48 @@ class StudentApiService {
       headers: _headers,
     );
     if (res.statusCode != 200) {
-      throw Exception('Cancel failed');
+      throw Exception('Cancel sell request failed');
     }
   }
 
   // ==================== TRANSACTIONS ====================
 
-  Future<List<TransactionResponse>> getTransactions() async {
+  Future<List<TransactionData>> getTransactions() async {
     final res = await http.get(
-      Uri.parse('$_baseUrl/transactions'),
+      Uri.parse('$_baseUrl/students/me/transactions'),
       headers: _headers,
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
-      return data.map((e) => TransactionResponse.fromJson(e)).toList();
+      return data.map((e) => TransactionData.fromJson(e)).toList();
     }
     throw Exception('Failed to fetch transactions');
+  }
+
+  // ==================== STUDENT PROFILE ====================
+
+  Future<StudentProfile> getSellerProfile(String studentId) async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/students/$studentId/profile'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      return StudentProfile.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('Failed to fetch seller profile');
+  }
+
+  // ==================== HALLS ====================
+
+  Future<List<HallModel>> getHalls() async {
+    final res = await http.get(
+      Uri.parse('$_baseUrl/halls'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => HallModel.fromJson(e)).toList();
+    }
+    throw Exception('Failed to fetch halls');
   }
 }
