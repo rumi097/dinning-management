@@ -114,8 +114,14 @@
 
 ## Meal Manager Reports
 - **GET** `/reports/sales?date=YYYY-MM-DD`
-- **GET** `/reports/revenue?date=YYYY-MM-DD`
 - **GET** `/reports/wallet-topups?date=YYYY-MM-DD`
+- **POST** `/manager/menu`
+- **POST** `/manager/token-price`
+- **POST** `/manager/purchase-deadline`
+- **GET** `/manager/sales-summary`
+
+
+
 
 ## Future / Admin Reports
 - **GET** `/reports/hall-summary`

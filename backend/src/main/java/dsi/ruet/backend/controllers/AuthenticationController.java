@@ -3,6 +3,9 @@ package dsi.ruet.backend.controllers;
 import dsi.ruet.backend.dto.auth.AuthResponse;
 import dsi.ruet.backend.dto.auth.LoginRequest;
 import dsi.ruet.backend.dto.auth.SignupRequest;
+import dsi.ruet.backend.dto.auth.SignupResponse;
+import dsi.ruet.backend.dto.auth.OtpResponse;
+import dsi.ruet.backend.dto.auth.OtpVerificationResponse;
 import dsi.ruet.backend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,17 +22,21 @@ public class AuthenticationController {
     private AuthenticationService authenticationService;
 
     /**
-     * Student signup endpoint
+     * Student signup endpoint (step 3 of signup process)
      * Requirements:
      * 1. Email must already exist in Users table (created by admin as placeholder)
-     * 2. User must not be verified yet
-     * 3. Student provides: password, name, roll, phoneNo, roomNo (optional), hallId (optional)
-     * 4. After signup, OTP will be sent to email for verification
-     * 5. TODO: Implement OTP verification endpoint
+     * 2. Email must be verified via OTP (call /send-otp and /verify-otp first)
+     * 3. Student provides: email, password, name, roll, phoneNo, roomNo (optional), hallId (optional)
+     * 4. After successful signup, user is marked as verified and can login
+     * 
+     * Flow:
+     * 1. User calls /send-otp with email
+     * 2. User calls /verify-otp with email and OTP
+     * 3. User calls /signup with full signup details (email must be pre-verified via OTP)
      */
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signup(@RequestBody SignupRequest request) {
-        AuthResponse response = authenticationService.signup(request);
+    public ResponseEntity<SignupResponse> signup(@RequestBody SignupRequest request) {
+        SignupResponse response = authenticationService.signup(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -61,16 +68,33 @@ public class AuthenticationController {
     }
 
     /**
-     * TODO: Verify OTP for email verification after signup
-     * This endpoint will:
-     * 1. Accept email and OTP code
-     * 2. Validate OTP against stored code
-     * 3. Mark user as verified (isVerified = true)
-     * 4. Return JWT token for login
+     * Send OTP endpoint (step 1 of signup process)
+     * Frontend calls this when user clicks "Sign Up"
+     * This endpoint:
+     * 1. Accepts user email
+     * 2. Generates OTP (fixed 123456 for testing)
+     * 3. Stores email-OTP pair temporarily
+     * 4. Returns success response
+     * Note: Actually sending OTP to email is not implemented yet
+     */
+    @PostMapping("/send-otp")
+    public ResponseEntity<OtpResponse> sendOtp(@RequestParam String email) {
+        OtpResponse response = authenticationService.sendOtp(email);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Verify OTP endpoint (step 2 of signup process)
+     * Frontend calls this when user enters OTP and clicks "Verify"
+     * This endpoint:
+     * 1. Accepts email and OTP code from frontend
+     * 2. Validates OTP against stored OTP in cache
+     * 3. Marks email as verified (prerequisite for signup)
+     * 4. Returns success/failure response (no token yet)
      */
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestParam String email, @RequestParam String otp) {
-        // TODO: Implement OTP verification logic
-        return new ResponseEntity<>("OTP verification not yet implemented", HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<OtpVerificationResponse> verifyOtp(@RequestParam String email, @RequestParam String otp) {
+        OtpVerificationResponse response = authenticationService.verifyOtp(email, otp);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

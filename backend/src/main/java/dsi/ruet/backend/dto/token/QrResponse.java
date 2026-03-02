@@ -22,7 +22,4 @@ public class QrResponse {
 
     /** The raw QR code string in format "TOKEN:<tokenId>:<uuid>" */
     private String qrCode;
-
-    /** Base64-encoded PNG image of the QR code for rendering in the UI */
-    private String qrImageBase64;
 }

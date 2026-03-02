@@ -9,13 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -147,13 +142,9 @@ public class TokenServiceImpl implements TokenService {
             token = tokenRepository.save(token);
         }
 
-        // Generate Base64 QR image
-        String qrImageBase64 = generateQrImageBase64(token.getQrCode());
-
         return QrResponse.builder()
                 .tokenId(token.getId())
                 .qrCode(token.getQrCode())
-                .qrImageBase64(qrImageBase64)
                 .build();
     }
 
@@ -324,58 +315,4 @@ public class TokenServiceImpl implements TokenService {
                 .build();
     }
 
-    /**
-     * Generates a Base64-encoded PNG QR code image using Java 2D graphics.
-     * This is a simple text-based QR representation.
-     * For production, consider using ZXing library for proper QR codes.
-     */
-    private String generateQrImageBase64(String qrData) {
-        try {
-            int size = 200;
-            BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = image.createGraphics();
-
-            // White background
-            g.setColor(Color.WHITE);
-            g.fillRect(0, 0, size, size);
-
-            // Black border
-            g.setColor(Color.BLACK);
-            g.drawRect(0, 0, size - 1, size - 1);
-
-            // Draw QR data as text (simplified representation)
-            g.setFont(new Font("Monospaced", Font.PLAIN, 10));
-            g.setColor(Color.BLACK);
-
-            // Simple hash-based pattern to create visual distinctiveness
-            int cellSize = 8;
-            int offset = 20;
-            int gridSize = (size - 2 * offset) / cellSize;
-            int hash = qrData.hashCode();
-
-            for (int row = 0; row < gridSize; row++) {
-                for (int col = 0; col < gridSize; col++) {
-                    // Deterministic pattern based on data hash
-                    int val = (hash ^ (row * 31 + col * 17)) & 0xFF;
-                    if (val % 2 == 0) {
-                        g.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
-                    }
-                }
-            }
-
-            // Draw TOKEN text at bottom
-            g.setColor(Color.BLACK);
-            g.setFont(new Font("SansSerif", Font.BOLD, 9));
-            g.drawString("TOKEN-" + qrData.substring(6, Math.min(20, qrData.length())), 10, size - 5);
-
-            g.dispose();
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "PNG", baos);
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
-        } catch (Exception e) {
-            // Fall back to returning the raw QR data if image generation fails
-            return Base64.getEncoder().encodeToString(qrData.getBytes());
-        }
-    }
 }

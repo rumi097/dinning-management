@@ -7,10 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+<<<<<<< HEAD
 /**
  * Entity representing a meal token purchased by a student.
  * Maps to the {@code tokens} table in the database.
  */
+=======
+>>>>>>> 519aad96173a138aa0de36bcf62195c81caef34b
 @Entity
 @Table(name = "tokens")
 @Data
@@ -22,6 +25,7 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+<<<<<<< HEAD
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meal_id", nullable = false)
     private Meal meal;
@@ -48,4 +52,20 @@ public class Token {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+=======
+    @Column(name = "meal_id", nullable = false)
+    private Long mealId;
+
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
+
+    @Column(length = 20)
+    private String status = "ACTIVE"; // ACTIVE, USED, LISTED_FOR_SALE
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
+>>>>>>> 519aad96173a138aa0de36bcf62195c81caef34b
 }
