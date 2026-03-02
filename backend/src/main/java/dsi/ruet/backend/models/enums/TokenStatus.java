@@ -5,5 +5,5 @@ public enum TokenStatus {
     IN_QUEUE,
     USED,
     LISTED,
-    CANCEL
+    CANCELLED
 }

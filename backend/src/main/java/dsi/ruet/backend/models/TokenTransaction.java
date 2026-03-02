@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a token transfer transaction between two users.
+ * Maps to the {@code token_transactions} table in the database.
+ */
 @Entity
 @Table(name = "token_transactions")
 @Data

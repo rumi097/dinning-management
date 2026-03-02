@@ -29,7 +29,7 @@ public class Token {
     private User owner;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private TokenStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -37,6 +37,9 @@ public class Token {
 
     @Column(name = "used_at")
     private LocalDateTime usedAt;
+
+    @Column(name = "qr_code", length = 100)
+    private String qrCode;
 
     @PrePersist
     protected void onCreate() {
