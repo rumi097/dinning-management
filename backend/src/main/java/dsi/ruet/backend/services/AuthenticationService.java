@@ -10,8 +10,10 @@ import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
+import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
+import dsi.ruet.backend.repositories.HallRepository;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,9 @@ public class AuthenticationService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
+
+    @Autowired
+    private HallRepository hallRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -101,7 +106,7 @@ public class AuthenticationService {
 
         // Create student info if user role is STUDENT
         StudentInfo studentInfo = null;
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             // Validate required student fields
             if (request.getRoll() == null || request.getPhoneNo() == null || request.getRoomNo()==null) {
                 throw new IllegalArgumentException(
@@ -167,7 +172,10 @@ public class AuthenticationService {
         response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHall().getId());  // Include for all users
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
+        }
 
         // If student role, include StudentInfo
         if ("STUDENT".equals(user.getRole().name())) {
@@ -197,8 +205,13 @@ public class AuthenticationService {
         response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHall().getId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
+        
+        // Include hall info if present
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
+        }
 
         // If student role, include StudentInfo
         if ("STUDENT".equals(user.getRole().name())) {

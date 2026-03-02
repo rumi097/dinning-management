@@ -22,7 +22,6 @@ public class Wallet {
     @Column(nullable = false)
     private Double balance = 0.0;
 
-    /** Deduct coins from wallet. Throws if insufficient balance. */
     public void deduct(double amount) {
         if (this.balance < amount) {
             throw new IllegalStateException("Insufficient balance");
@@ -30,7 +29,6 @@ public class Wallet {
         this.balance -= amount;
     }
 
-    /** Credit coins to wallet. */
     public void credit(double amount) {
         this.balance += amount;
     }

@@ -1,0 +1,99 @@
+Table halls {
+  id bigint [pk, increment]
+  name varchar(100) [unique, not null]
+}
+
+Table users {
+  id bigint [pk, increment]
+  email varchar(120) [unique, not null]
+  password varchar(255) [not null]
+  name varchar(120) [not null]
+  hall_id bigint
+  is_verified boolean [default: false]
+  role varchar(20) [not null] // STUDENT, MEAL_MANAGER, DINING_MANAGER
+}
+
+Table student_infos {
+  id bigint [pk]  // shared PK with users.id
+  roll varchar(50) [unique, not null]
+  room_no varchar(20)
+  phone_no varchar(20)
+}
+
+
+Table wallets {
+  id bigint [pk]  // shared PK with users.id
+  balance numeric(10,2) [default: 0]
+}
+
+Table meals {
+  id bigint [pk, increment]
+  hall_id bigint [not null]
+  meal_date date [not null]
+  meal_type varchar(10) [not null] // LUNCH, DINNER
+  menu text
+  price numeric(8,2) [not null]
+  purchase_deadline timestamp [not null]
+
+  indexes {
+    (hall_id, meal_date, meal_type) [unique]
+  }
+}
+
+Table tokens {
+  id bigint [pk, increment]
+  meal_id bigint [not null]
+  owner_id bigint [not null]
+  status varchar(20) [default: 'ACTIVE'] 
+  // ACTIVE, USED, LISTED_FOR_SALE
+  created_at timestamp [default: `now()`]
+  used_at timestamp
+}
+
+Table marketplace_posts {
+  id bigint [pk, increment]
+  token_id bigint [unique, not null]
+  seller_id bigint [not null]
+  buyer_id bigint
+  status varchar(20) [default: 'OPEN'] 
+  // OPEN, REQUESTED, COMPLETED, CANCELLED
+  created_at timestamp [default: `now()`]
+}
+
+Table coin_transactions {
+  id bigint [pk, increment]
+  sender_id bigint [not null]
+  receiver_id bigint [not null]
+  amount numeric(10,2)
+  type varchar(20) [default: 'TRANSFER']
+  // TRANSFER, TOP_UP 
+  created_at timestamp [default: `now()`]
+}
+
+Table token_transactions {
+  id bigint [pk, increment]
+  sender_id bigint [not null]
+  receiver_id bigint [not null]
+  token_id bigint [not null]
+  created_at timestamp [default: `now()`]
+}
+
+
+//////////////////////////////////////////////////
+// Relationships
+//////////////////////////////////////////////////
+
+Ref: student_infos.id > users.id
+Ref: users.hall_id > halls.id
+Ref: meals.hall_id > halls.id
+Ref: tokens.meal_id > meals.id
+Ref: tokens.owner_id > users.id
+Ref: marketplace_posts.token_id > tokens.id
+Ref: marketplace_posts.seller_id > users.id
+Ref: marketplace_posts.buyer_id > users.id
+Ref: wallets.id > users.id
+Ref: coin_transactions.sender_id > users.id
+Ref: coin_transactions.receiver_id > users.id
+Ref: token_transactions.sender_id > users.id
+Ref: token_transactions.receiver_id > users.id
+Ref: token_transactions.token_id > tokens.id
