@@ -1,0 +1,32 @@
+# create src/main/resources/application-dev.example
+
+# Copy everything below to application-dev.properties
+
+
+#change these values to your own credential
+
+#database config
+spring.datasource.url=jdbc:postgresql://localhost:5432/_YOUR_DB_NAME
+spring.datasource.username=postgres
+spring.datasource.password=_YOUR_DB_PASSWORD
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+#jwt config
+jwt.secret=CHANGE_THIS_TO_A_LONG_STRING_MORE_THAN_64_CHAR
+jwt.expiration=86400000
+
+#mail config (SMTP)
+#get your app password from https://myaccount.google.com/apppasswords
+#copy paste everything below to application-dev.properties
+
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=_YOUR_EMAIL@gmail.com
+spring.mail.password=_YOUR_APP_PASSWORD
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+spring.mail.properties.mail.smtp.writetimeout=5000
+app.mail.from=_YOUR_EMAIL@gmail.com

@@ -33,4 +33,4 @@ build/
 .vscode/
 
 # Local Spring config with secrets
-src/main/resources/application.properties
+src/main/resources/application-dev.properties
