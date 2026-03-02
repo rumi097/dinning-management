@@ -6,7 +6,7 @@ Table halls {
 Table users {
   id bigint [pk, increment]
   email varchar(120) [unique, not null]
-  pass varchar(255) [not null]
+  password varchar(255) [not null]
   name varchar(120) [not null]
   hall_id bigint
   is_verified boolean [default: false]
