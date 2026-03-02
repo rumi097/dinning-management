@@ -74,7 +74,7 @@ public class TokenServiceImpl implements TokenService {
         Token token = new Token();
         token.setMeal(meal);
         token.setOwner(currentUser);
-        token.setStatus(TokenStatus.ACTIVE);
+        token.setStatus(TokenStatus.AVAILABLE);
         token = tokenRepository.save(token);
 
         // 7. Generate a unique QR code string and save it
@@ -131,8 +131,8 @@ public class TokenServiceImpl implements TokenService {
         }
 
         // Token must be ACTIVE
-        if (token.getStatus() != TokenStatus.ACTIVE) {
-            throw new IllegalStateException("QR code can only be generated for ACTIVE tokens. Current status: " + token.getStatus());
+        if (token.getStatus() != TokenStatus.AVAILABLE) {
+            throw new IllegalStateException("QR code can only be generated for AVAILABLE tokens. Current status: " + token.getStatus());
         }
 
         // Generate QR code string if not already generated
@@ -186,7 +186,7 @@ public class TokenServiceImpl implements TokenService {
         }
 
         // Check if token is active
-        if (token.getStatus() != TokenStatus.ACTIVE) {
+        if (token.getStatus() != TokenStatus.AVAILABLE) {
             return QrValidationResponse.builder()
                     .valid(false)
                     .tokenId(token.getId())
@@ -237,8 +237,8 @@ public class TokenServiceImpl implements TokenService {
             throw new IllegalStateException("Token has already been used.");
         }
 
-        if (token.getStatus() != TokenStatus.ACTIVE) {
-            throw new IllegalStateException("Only ACTIVE tokens can be marked as used. Current status: " + token.getStatus());
+        if (token.getStatus() != TokenStatus.AVAILABLE) {
+            throw new IllegalStateException("Only AVAILABLE tokens can be marked as used. Current status: " + token.getStatus());
         }
 
         token.setStatus(TokenStatus.USED);
@@ -258,9 +258,9 @@ public class TokenServiceImpl implements TokenService {
 
         User sender = token.getOwner();
 
-        // Token must be ACTIVE
-        if (token.getStatus() != TokenStatus.ACTIVE) {
-            throw new IllegalStateException("Only ACTIVE tokens can be transferred. Current status: " + token.getStatus());
+        // Token must be AVAILABLE
+        if (token.getStatus() != TokenStatus.AVAILABLE) {
+            throw new IllegalStateException("Only AVAILABLE tokens can be transferred. Current status: " + token.getStatus());
         }
 
         // Find the receiver

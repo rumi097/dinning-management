@@ -7,6 +7,7 @@ import dsi.ruet.backend.dto.manager.WalletTopupReportResponse;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.CoinTransaction;
 import dsi.ruet.backend.models.Meal;
+import dsi.ruet.backend.models.TokenStatus;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.repositories.CoinTransactionRepository;
 import dsi.ruet.backend.repositories.MealRepository;
@@ -55,8 +56,8 @@ public class ReportService {
 
         for (Meal meal : meals) {
             long sold = tokenRepository.countByMealId(meal.getId());
-            long used = tokenRepository.countByMealIdAndStatus(meal.getId(), "USED");
-            long active = tokenRepository.countByMealIdAndStatus(meal.getId(), "ACTIVE");
+            long used = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.USED);
+            long active = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.AVAILABLE);
             BigDecimal revenue = meal.getPrice().multiply(BigDecimal.valueOf(sold));
 
             totalTokens += sold;

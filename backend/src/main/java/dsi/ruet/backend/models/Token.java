@@ -28,7 +28,7 @@ public class Token {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private TokenStatus status = TokenStatus.ACTIVE;
+    private TokenStatus status = TokenStatus.AVAILABLE;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
