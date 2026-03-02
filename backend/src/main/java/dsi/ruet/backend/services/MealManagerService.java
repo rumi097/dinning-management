@@ -131,13 +131,16 @@ public class MealManagerService {
 
         List<CreditTransactionResponse> result = transactions.stream().map(tx -> {
             // Get student roll from StudentInfo (if available)
-            String roll = studentInfoRepository.findById(tx.getReceiver().getId())
-                    .map(StudentInfo::getRoll).orElse(tx.getReceiver().getId().toString());
+            Long receiverId = tx.getReceiverId();
+            String roll = studentInfoRepository.findById(receiverId)
+                    .map(StudentInfo::getRoll).orElse(receiverId.toString());
+            String receiverName = userRepository.findById(receiverId)
+                    .map(User::getName).orElse(receiverId.toString());
 
             return new CreditTransactionResponse(
                     tx.getId().toString(),
                     roll,
-                    tx.getReceiver().getName(),
+                    receiverName,
                     tx.getAmount(),
                     tx.getCreatedAt()
             );
@@ -190,7 +193,7 @@ public class MealManagerService {
      * Update an existing meal config by its ID.
      */
     @Transactional
-    public ApiResponse<MealConfigResponse> updateMealConfig(Integer mealId, SetMenuRequest request,
+    public ApiResponse<MealConfigResponse> updateMealConfig(Long mealId, SetMenuRequest request,
                                                             Long managerId) {
         User manager = findUserById(managerId);
         Meal meal = findMealById(mealId);
@@ -365,7 +368,7 @@ public class MealManagerService {
 
         for (Meal meal : meals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            double revenue = count * meal.getPrice();
+            double revenue = meal.getPrice().multiply(java.math.BigDecimal.valueOf(count)).doubleValue();
             if ("LUNCH".equals(meal.getMealType())) {
                 lunchRevenue = revenue;
             } else if ("DINNER".equals(meal.getMealType())) {
@@ -414,11 +417,11 @@ public class MealManagerService {
             long count = tokenRepository.countByMealId(meal.getId());
             if ("LUNCH".equals(meal.getMealType())) {
                 lunchCount = (int) count;
-                lunchRevenue = count * meal.getPrice();
+                lunchRevenue = count * meal.getPrice().doubleValue();
                 lunchAvailable = !Boolean.TRUE.equals(meal.getIsClosed());
             } else if ("DINNER".equals(meal.getMealType())) {
                 dinnerCount = (int) count;
-                dinnerRevenue = count * meal.getPrice();
+                dinnerRevenue = count * meal.getPrice().doubleValue();
                 dinnerAvailable = !Boolean.TRUE.equals(meal.getIsClosed());
             }
         }
@@ -474,10 +477,10 @@ public class MealManagerService {
                 long count = tokenRepository.countByMealId(meal.getId());
                 if ("LUNCH".equals(meal.getMealType())) {
                     lunchCount = (int) count;
-                    lunchPrice = meal.getPrice();
+                    lunchPrice = meal.getPrice().doubleValue();
                 } else if ("DINNER".equals(meal.getMealType())) {
                     dinnerCount = (int) count;
-                    dinnerPrice = meal.getPrice();
+                    dinnerPrice = meal.getPrice().doubleValue();
                 }
             }
 
@@ -518,13 +521,16 @@ public class MealManagerService {
 
             List<DailyCreditHistoryResponse.CreditTransactionItem> items = dayTx.stream().map(tx -> {
                 // Resolve student roll number
-                String roll = studentInfoRepository.findById(tx.getReceiver().getId())
-                        .map(StudentInfo::getRoll).orElse(tx.getReceiver().getId().toString());
+                Long receiverId = tx.getReceiverId();
+                String roll = studentInfoRepository.findById(receiverId)
+                        .map(StudentInfo::getRoll).orElse(receiverId.toString());
+                String receiverName = userRepository.findById(receiverId)
+                        .map(User::getName).orElse(receiverId.toString());
 
                 return new DailyCreditHistoryResponse.CreditTransactionItem(
                         tx.getId().toString(),
                         roll,
-                        tx.getReceiver().getName(),
+                        receiverName,
                         tx.getAmount().doubleValue(),
                         tx.getCreatedAt().format(TIME_FMT)
                 );
@@ -574,7 +580,7 @@ public class MealManagerService {
         double totalPending = 0;
         for (Meal meal : pendingMeals) {
             long tokenCount = tokenRepository.countByMealId(meal.getId());
-            totalPending += tokenCount * meal.getPrice();
+            totalPending += meal.getPrice().multiply(BigDecimal.valueOf(tokenCount)).doubleValue();
         }
 
         // Calculate completed amount from REFUND coin transactions by this manager
@@ -606,7 +612,7 @@ public class MealManagerService {
      */
     @Transactional
     public ApiResponse<Void> processRefund(String mealIdStr, Long managerId) {
-        Integer mealId = Integer.parseInt(mealIdStr);
+        Long mealId = Long.parseLong(mealIdStr);
         User manager = findUserById(managerId);
         Meal meal = findMealById(mealId);
 
@@ -642,7 +648,7 @@ public class MealManagerService {
         int totalRefunded = 0;
 
         for (String mealIdStr : mealIds) {
-            Integer mealId = Integer.parseInt(mealIdStr);
+            Long mealId = Long.parseLong(mealIdStr);
             User manager = findUserById(managerId);
             Meal meal = findMealById(mealId);
 
@@ -695,7 +701,7 @@ public class MealManagerService {
     }
 
     /** Find meal by ID or throw 404 */
-    private Meal findMealById(Integer mealId) {
+    private Meal findMealById(Long mealId) {
         return mealRepository.findById(mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found with id: " + mealId));
     }
@@ -727,8 +733,8 @@ public class MealManagerService {
     /** Record a coin transaction between two users */
     private void recordCoinTransaction(User sender, User receiver, BigDecimal amount, String type) {
         CoinTransaction tx = new CoinTransaction();
-        tx.setSender(sender);
-        tx.setReceiver(receiver);
+        tx.setSenderId(sender.getId());
+        tx.setReceiverId(receiver.getId());
         tx.setAmount(amount);
         tx.setType(type);
         tx.setCreatedAt(LocalDateTime.now());
@@ -743,7 +749,7 @@ public class MealManagerService {
         List<Token> tokens = tokenRepository.findByMealId(meal.getId());
 
         List<StudentTokenResponse> students = tokens.stream()
-                .filter(t -> !"USED".equals(t.getStatus()))
+                .filter(t -> t.getStatus() != TokenStatus.USED)
                 .map(token -> {
                     User owner = token.getOwner();
                     String roll = studentInfoRepository.findById(owner.getId())
@@ -760,7 +766,7 @@ public class MealManagerService {
         int tokensSold = (int) tokenRepository.countByMealId(meal.getId());
         // For completed refunds, tokens are already deleted, so tokensSold = 0
         // We can infer from status
-        double totalRefundAmount = tokensSold * meal.getPrice();
+        double totalRefundAmount = meal.getPrice().multiply(java.math.BigDecimal.valueOf(tokensSold)).doubleValue();
 
         String refundedAtStr = meal.getRefundedAt() != null
                 ? meal.getRefundedAt().toString() : null;
@@ -812,9 +818,9 @@ public class MealManagerService {
         int refundCount = 0;
 
         for (Token token : tokens) {
-            if (!"USED".equals(token.getStatus())) {
+            if (token.getStatus() != TokenStatus.USED) {
                 // Refund the token price to the student's wallet
-                BigDecimal refundAmount = BigDecimal.valueOf(meal.getPrice());
+                BigDecimal refundAmount = meal.getPrice();
                 Wallet wallet = getOrCreateWallet(token.getOwner());
                 wallet.setBalance(wallet.getBalance().add(refundAmount));
                 walletRepository.save(wallet);

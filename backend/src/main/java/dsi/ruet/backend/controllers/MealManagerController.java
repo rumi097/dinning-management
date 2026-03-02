@@ -98,7 +98,7 @@ public class MealManagerController {
      */
     @PutMapping("/meals/config/{id}")
     public ResponseEntity<ApiResponse<MealConfigResponse>> updateMealConfig(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestBody SetMenuRequest request,
             Authentication authentication) {
 

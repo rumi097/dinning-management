@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface TokenTransactionRepository extends JpaRepository<TokenTransaction, Long> {
-    List<TokenTransaction> findBySenderIdOrReceiverId(Long senderId, Long receiverId);
     List<TokenTransaction> findByTokenId(Long tokenId);
+    List<TokenTransaction> findBySenderIdOrReceiverId(Long senderId, Long receiverId);
 }

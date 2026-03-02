@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MealConfigResponse {
-    private Integer id;
+    private Long id;
     private String date;             // YYYY-MM-DD
     private String mealType;         // LUNCH or DINNER
-    private Float price;
+    private java.math.BigDecimal price;
     private String menu;
     private String purchaseDeadline; // HH:mm format for frontend display
     private String purchaseStartTime;

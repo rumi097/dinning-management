@@ -17,6 +17,8 @@ import java.util.List;
 @Repository
 public interface CoinTransactionRepository extends JpaRepository<CoinTransaction, Long> {
 
+    // ===== Meal-manager queries =====
+
     /** All top-ups made by a specific sender (meal manager) */
     List<CoinTransaction> findBySenderIdAndType(Long senderId, String type);
 
@@ -28,7 +30,7 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
 
     /** Total amount topped up by a manager on a specific day */
     @Query("SELECT COALESCE(SUM(ct.amount), 0) FROM CoinTransaction ct " +
-           "WHERE ct.sender.id = :senderId AND ct.type = 'TOPUP' " +
+           "WHERE ct.senderId = :senderId AND ct.type = 'TOPUP' " +
            "AND ct.createdAt >= :dayStart AND ct.createdAt < :dayEnd")
     BigDecimal sumTopUpBySenderAndDay(
             @Param("senderId") Long senderId,
@@ -37,7 +39,7 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
 
     /** All TOPUP transactions by a manager within a date range, newest first */
     @Query("SELECT ct FROM CoinTransaction ct " +
-           "WHERE ct.sender.id = :senderId AND ct.type = 'TOPUP' " +
+           "WHERE ct.senderId = :senderId AND ct.type = 'TOPUP' " +
            "AND ct.createdAt >= :start AND ct.createdAt < :end " +
            "ORDER BY ct.createdAt DESC")
     List<CoinTransaction> findTopUpsBySenderAndDateRange(
@@ -47,7 +49,7 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
 
     /** Count of TOPUP transactions by a manager on a specific day */
     @Query("SELECT COUNT(ct) FROM CoinTransaction ct " +
-           "WHERE ct.sender.id = :senderId AND ct.type = 'TOPUP' " +
+           "WHERE ct.senderId = :senderId AND ct.type = 'TOPUP' " +
            "AND ct.createdAt >= :dayStart AND ct.createdAt < :dayEnd")
     long countTopUpsBySenderAndDay(
             @Param("senderId") Long senderId,
@@ -56,11 +58,29 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
 
     /** All REFUND transactions by a manager within a date range */
     @Query("SELECT ct FROM CoinTransaction ct " +
-           "WHERE ct.sender.id = :senderId AND ct.type = 'REFUND' " +
+           "WHERE ct.senderId = :senderId AND ct.type = 'REFUND' " +
            "AND ct.createdAt >= :start AND ct.createdAt < :end " +
            "ORDER BY ct.createdAt DESC")
     List<CoinTransaction> findRefundsBySenderAndDateRange(
             @Param("senderId") Long senderId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    // ===== Report-service queries (incoming) =====
+
+    @Query("SELECT ct FROM CoinTransaction ct WHERE ct.type = 'TOP_UP' " +
+           "AND ct.receiverId IN :userIds " +
+           "AND ct.createdAt >= :startOfDay AND ct.createdAt < :endOfDay")
+    List<CoinTransaction> findTopUpsByReceiverIdsAndDate(
+            @Param("userIds") List<Long> userIds,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay);
+
+    @Query("SELECT COALESCE(SUM(ct.amount), 0) FROM CoinTransaction ct WHERE ct.type = 'TOP_UP' " +
+           "AND ct.receiverId IN :userIds " +
+           "AND ct.createdAt >= :startOfDay AND ct.createdAt < :endOfDay")
+    BigDecimal sumTopUpsByReceiverIdsAndDate(
+            @Param("userIds") List<Long> userIds,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay);
 }

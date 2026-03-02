@@ -19,20 +19,18 @@ public class CoinTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
+    @Column(name = "sender_id", nullable = false)
+    private Long senderId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
-    private User receiver;
+    @Column(name = "receiver_id", nullable = false)
+    private Long receiverId;
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "type", nullable = false, length = 20)
-    private String type; // TOPUP, TRANSACTION
+    @Column(length = 20)
+    private String type = "TRANSFER"; // TRANSFER, TOP_UP
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenSummaryResponse {
-    private Integer mealId;
+    private Long mealId;
     private String mealType;
     private String mealDate;
     private long totalTokensBought;

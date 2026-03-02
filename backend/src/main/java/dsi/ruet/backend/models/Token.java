@@ -26,12 +26,21 @@ public class Token {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @Column(name = "status", nullable = false, length = 20)
-    private String status = "ACTIVE"; // ACTIVE, USED, LISTED_FOR_SALE
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private TokenStatus status = TokenStatus.AVAILABLE;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @Column(name = "used_at")
     private LocalDateTime usedAt;
+
+    @Column(name = "qr_code", length = 100)
+    private String qrCode;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

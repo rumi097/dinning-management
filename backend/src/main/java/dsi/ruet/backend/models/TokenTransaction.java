@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a token transfer transaction between two users.
+ * Maps to the {@code token_transactions} table in the database.
+ */
 @Entity
 @Table(name = "token_transactions")
 @Data
@@ -30,6 +34,11 @@ public class TokenTransaction {
     @JoinColumn(name = "token_id", nullable = false)
     private Token token;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

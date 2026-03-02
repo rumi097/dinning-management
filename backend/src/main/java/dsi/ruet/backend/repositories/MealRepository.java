@@ -13,13 +13,16 @@ import java.util.Optional;
  * Provides lookups by hall, date, and meal type.
  */
 @Repository
-public interface MealRepository extends JpaRepository<Meal, Integer> {
+public interface MealRepository extends JpaRepository<Meal, Long> {
 
     /** All meals for a hall on a specific date */
     List<Meal> findByHallIdAndMealDate(Long hallId, LocalDate mealDate);
 
     /** Single meal for hall + date + type (unique combo) */
     Optional<Meal> findByHallIdAndMealDateAndMealType(Long hallId, LocalDate mealDate, String mealType);
+
+    /** All meals for a hall */
+    List<Meal> findByHallId(Long hallId);
 
     /** All meals for a hall within a date range (for history) */
     List<Meal> findByHallIdAndMealDateBetweenOrderByMealDateDesc(

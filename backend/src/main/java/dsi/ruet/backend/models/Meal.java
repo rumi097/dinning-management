@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -19,34 +20,40 @@ public class Meal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hall_id", nullable = false)
     private Hall hall;
 
+    @Column(name = "hall_id", insertable = false, updatable = false)
+    private Long hallId;
+
     @Column(name = "meal_date", nullable = false)
     private LocalDate mealDate;
 
     @Column(name = "meal_type", nullable = false, length = 10)
-    private String mealType; // Lunch, Dinner, etc.
+    private String mealType; // LUNCH, DINNER
 
     @Column(name = "menu", columnDefinition = "TEXT")
     private String menu;
 
-    @Column(name = "purchase_start_time", nullable = false)
+    @Column(name = "purchase_start_time")
     private LocalDateTime purchaseStartTime;
 
-    @Column(name = "purchase_end_time", nullable = false)
+    @Column(name = "purchase_end_time")
     private LocalDateTime purchaseEndTime;
 
-    @Column(name = "price", nullable = false)
-    private Float price;
+    @Column(name = "purchase_deadline")
+    private LocalDateTime purchaseDeadline;
+
+    @Column(name = "price", nullable = false, precision = 8, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "is_closed", nullable = false)
     private Boolean isClosed = false;
 
     // Timestamp when refunds were processed for this meal (null = not yet refunded)
     @Column(name = "refunded_at")
-    private java.time.LocalDateTime refundedAt;
+    private LocalDateTime refundedAt;
 }
