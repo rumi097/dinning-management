@@ -4,5 +4,6 @@ public enum TokenStatus {
     AVAILABLE,
     IN_QUEUE,
     USED,
-    LISTED
+    LISTED,
+    CANCEL
 }
