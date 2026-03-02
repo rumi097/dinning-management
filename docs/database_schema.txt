@@ -22,7 +22,7 @@ Table student_infos {
 
 
 Table wallets {
-  id bigint [pk, increment]
+  id bigint [pk]  // shared PK with users.id
   balance numeric(10,2) [default: 0]
 }
 
