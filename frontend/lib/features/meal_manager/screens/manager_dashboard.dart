@@ -4,6 +4,7 @@ import '../widgets/meal_count_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/quick_action_tile.dart';
 import 'add_credit_page.dart';
+import 'credit_refund_page.dart';
 import 'set_price_page.dart';
 import 'set_menu_page.dart';
 import 'meal_availability_page.dart';
@@ -266,6 +267,15 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             icon: Icons.event_available,
             color: Colors.teal,
             onTap: () => _goTo(const MealAvailabilityPage()),
+          ),
+          const SizedBox(height: 8),
+
+          QuickActionTile(
+            label: 'Credit Refund',
+            description: 'Refund credits for cancelled meals',
+            icon: Icons.currency_exchange,
+            color: Colors.red,
+            onTap: () => _goTo(const CreditRefundPage()),
           ),
 
           const SizedBox(height: 24),

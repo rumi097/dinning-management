@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../models/credit_refund.dart';
 import '../models/meal_availability.dart';
 import '../models/meal_config.dart';
 import '../models/meal_history.dart';
@@ -195,6 +196,47 @@ class MealManagerService {
   }
 
   // ---------------------------------------------------------------------------
+  // Credit Refund
+  // ---------------------------------------------------------------------------
+
+  /// GET /refunds/pending — Fetch cancelled meals eligible for refund
+  Future<List<RefundableMeal>> getRefundableMeals() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    return _mockRefundableMeals;
+  }
+
+  /// GET /refunds/summary — Get refund summary stats
+  Future<RefundSummary> getRefundSummary() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return const RefundSummary(
+      pendingCount: 3,
+      completedCount: 5,
+      totalAmountPending: 15950.0,
+      totalAmountRefunded: 28400.0,
+    );
+  }
+
+  /// POST /refunds/process — Process refund for a single cancelled meal
+  Future<bool> processRefund(String mealId) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    debugPrint('ProcessRefund: mealId=$mealId');
+    return true;
+  }
+
+  /// POST /refunds/process-bulk — Process refund for multiple cancelled meals
+  Future<bool> processBulkRefund(List<String> mealIds) async {
+    await Future.delayed(const Duration(milliseconds: 1200));
+    debugPrint('ProcessBulkRefund: mealIds=$mealIds');
+    return true;
+  }
+
+  /// GET /refunds/history — Fetch already-processed refunds
+  Future<List<RefundableMeal>> getRefundHistory() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    return _mockRefundHistory;
+  }
+
+  // ---------------------------------------------------------------------------
   // Mock Data
   // ---------------------------------------------------------------------------
 
@@ -329,6 +371,104 @@ class MealManagerService {
             amount: 650.0,
             time: '12:30 PM'),
       ],
+    ),
+  ];
+  // ── Refundable meals mock data ──
+
+  static final List<RefundableMeal> _mockRefundableMeals = [
+    RefundableMeal(
+      id: 'R001',
+      date: '2026-03-05',
+      mealType: MealType.lunch,
+      tokensSold: 87,
+      pricePerToken: 55.0,
+      totalRefundAmount: 4785.0,
+      students: const [
+        StudentToken(
+          studentId: 'S2021001',
+          studentName: 'Rahim Uddin',
+          studentRoll: '2021-001',
+          amountPaid: 55.0,
+        ),
+        StudentToken(
+          studentId: 'S2021045',
+          studentName: 'Fatima Akter',
+          studentRoll: '2021-045',
+          amountPaid: 55.0,
+        ),
+        StudentToken(
+          studentId: 'S2021112',
+          studentName: 'Karim Hasan',
+          studentRoll: '2021-112',
+          amountPaid: 55.0,
+        ),
+      ],
+      status: RefundStatus.pending,
+    ),
+    RefundableMeal(
+      id: 'R002',
+      date: '2026-03-05',
+      mealType: MealType.dinner,
+      tokensSold: 62,
+      pricePerToken: 65.0,
+      totalRefundAmount: 4030.0,
+      students: const [
+        StudentToken(
+          studentId: 'S2021078',
+          studentName: 'Nusrat Jahan',
+          studentRoll: '2021-078',
+          amountPaid: 65.0,
+        ),
+        StudentToken(
+          studentId: 'S2021023',
+          studentName: 'Tanvir Ahmed',
+          studentRoll: '2021-023',
+          amountPaid: 65.0,
+        ),
+      ],
+      status: RefundStatus.pending,
+    ),
+    RefundableMeal(
+      id: 'R003',
+      date: '2026-03-08',
+      mealType: MealType.lunch,
+      tokensSold: 109,
+      pricePerToken: 55.0,
+      totalRefundAmount: 5995.0,
+      students: const [
+        StudentToken(
+          studentId: 'S2021034',
+          studentName: 'Ayesha Siddiqua',
+          studentRoll: '2021-034',
+          amountPaid: 55.0,
+        ),
+      ],
+      status: RefundStatus.pending,
+    ),
+  ];
+
+  static final List<RefundableMeal> _mockRefundHistory = [
+    RefundableMeal(
+      id: 'R100',
+      date: '2026-02-20',
+      mealType: MealType.lunch,
+      tokensSold: 95,
+      pricePerToken: 55.0,
+      totalRefundAmount: 5225.0,
+      students: const [],
+      status: RefundStatus.completed,
+      refundedAt: null,
+    ),
+    RefundableMeal(
+      id: 'R101',
+      date: '2026-02-20',
+      mealType: MealType.dinner,
+      tokensSold: 78,
+      pricePerToken: 65.0,
+      totalRefundAmount: 5070.0,
+      students: const [],
+      status: RefundStatus.completed,
+      refundedAt: null,
     ),
   ];
 }
