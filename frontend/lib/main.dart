@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:frontend/core/services/service_locator.dart';
+import 'package:frontend/features/auth/screens/login_page.dart';
 import 'package:frontend/features/student/screens/student_home.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Skip ServiceLocator initialization on web (shared_preferences not supported)
-  if (!kIsWeb) {
-    await ServiceLocator.init();
-  }
-  
+
+  // Initialize ServiceLocator on all platforms
+  // TokenStorage gracefully handles web (SharedPreferences not supported)
+  await ServiceLocator.init();
+
   runApp(const DiningApp());
 }
 
@@ -34,30 +33,15 @@ class _DiningAppState extends State<DiningApp> {
   }
 
   Future<void> _checkLoginStatus() async {
-    if (kIsWeb) {
-      // On web, go directly to student home with dev token
-      setState(() {
-        _isLoggedIn = true;
-        _token = 'dev-token';
-        _isInitialized = true;
-      });
-      return;
-    }
-    
+    // Always check stored login status, even on web (will return false if not available)
     final isLoggedIn = await ServiceLocator.tokenStorage.isLoggedIn();
-    if (isLoggedIn) {
-      final token = await ServiceLocator.tokenStorage.getToken();
-      setState(() {
-        _isLoggedIn = true;
-        _token = token ?? 'dev-token';
-        _isInitialized = true;
-      });
-    } else {
-      setState(() {
-        _isLoggedIn = false;
-        _isInitialized = true;
-      });
-    }
+    final token = await ServiceLocator.tokenStorage.getToken();
+
+    setState(() {
+      _isLoggedIn = isLoggedIn;
+      _token = token ?? '';
+      _isInitialized = true;
+    });
   }
 
   @override
@@ -81,33 +65,30 @@ class _DiningAppState extends State<DiningApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: _isLoggedIn 
-          ? StudentHome(token: _token)
-          : const LoginPlaceholder(),
+      home: _isLoggedIn ? StudentHome(token: _token) : const LoginPage(),
+      routes: {
+        '/login': (_) => const LoginPage(),
+        '/student-home': (_) => StudentHome(token: _token),
+        '/meal-manager-home': (_) =>
+            const _PlaceholderPage(title: 'Meal Manager'),
+        '/dining-manager-home': (_) =>
+            const _PlaceholderPage(title: 'Dining Manager'),
+        '/home': (_) => const LoginPage(),
+      },
     );
   }
 }
 
-class LoginPlaceholder extends StatelessWidget {
-  const LoginPlaceholder({super.key});
+class _PlaceholderPage extends StatelessWidget {
+  final String title;
+
+  const _PlaceholderPage({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Digital Dining System')),
-      body: Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Please login',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSurface),
-            ),
-          ),
-        ),
-      ),
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text('$title Home - Coming Soon')),
     );
   }
 }
