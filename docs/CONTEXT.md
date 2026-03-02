@@ -142,7 +142,7 @@ dsi.ruet.backend
 
 ## Security Notes
 - `/auth/signup`, `/auth/login` → permitAll
-- `/admin/**` → permitAll (needs future fix)
+- `/admin/**` → authenticated, restricted to MEAL_MANAGER role (e.g. `hasRole('MEAL_MANAGER')`)
 - Everything else → authenticated
 - Method-level: `@PreAuthorize` annotations for role checking
 - JWT claims contain: sub=email, role=user_role
