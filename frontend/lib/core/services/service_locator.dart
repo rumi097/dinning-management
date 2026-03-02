@@ -10,8 +10,11 @@ class ServiceLocator {
 
   /// Initialize all services
   static Future<void> init() async {
+    // TokenStorage will initialize SharedPreferences on native platforms
+    // On web, it will fail gracefully and return null for stored values
     _tokenStorage = TokenStorage();
     await _tokenStorage.init();
+
     _apiClient = ApiClient(tokenStorage: _tokenStorage);
     _authService = AuthService(
       apiClient: _apiClient,
