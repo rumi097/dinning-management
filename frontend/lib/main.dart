@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/features/student/screens/student_home.dart';
 import 'core/theme/app_theme.dart';
 
 void main() {
@@ -16,7 +17,7 @@ class DiningApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: const HomePage(),
+      home: const StudentHome(),
     );
   }
 }
