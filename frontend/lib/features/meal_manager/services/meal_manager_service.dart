@@ -1,5 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import '../models/credit_refund.dart';
 import '../models/meal_availability.dart';
 import '../models/meal_config.dart';
@@ -8,113 +9,149 @@ import '../models/credit_transaction.dart';
 
 /// Service layer for all Meal Manager API calls.
 ///
-/// Currently returns mock data. Replace the method bodies with real HTTP
-/// calls (e.g. using `http` or `dio` package) once the backend is ready.
-///
-/// Base URL: /api/v1
+/// Uses [ApiClient] (Dio) with automatic Bearer token injection.
+/// All responses are wrapped in ApiResponse: { success, message, data }.
 class MealManagerService {
-  // TODO: Replace with your actual base URL
-  static const String _baseUrl = 'http://localhost:8080/api/v1';
+  final ApiClient _apiClient;
+
+  MealManagerService({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ServiceLocator.apiClient;
 
   // ---------------------------------------------------------------------------
   // Wallet / Top‑up
   // ---------------------------------------------------------------------------
 
   /// POST /wallet/topup
+  /// Returns true on success. Backend returns ApiResponse<StudentBalanceResponse>.
   Future<bool> topUpWallet({
     required String studentId,
     required double amount,
   }) async {
-    // TODO: Replace with real API call
-    // final response = await http.post(
-    //   Uri.parse('$_baseUrl/wallet/topup'),
-    //   headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-    //   body: jsonEncode({'studentId': studentId, 'amount': amount}),
-    // );
-    // return response.statusCode == 200;
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint('TopUp: studentId=$studentId, amount=$amount');
-    return true;
+    try {
+      final response = await _apiClient.post(
+        '/wallet/topup',
+        data: {
+          'studentId': studentId,
+          'amount': amount,
+        },
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('TopUpWallet error: $e');
+      return false;
+    }
   }
 
   /// GET /wallet/student/{studentId}
+  /// Returns the student's current wallet balance.
   Future<double> getStudentBalance(String studentId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Mock balance
-    return 250.00;
+    try {
+      final response = await _apiClient.get('/wallet/student/$studentId');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        return (data['balance'] as num).toDouble();
+      }
+      return 0.0;
+    } catch (e) {
+      debugPrint('GetStudentBalance error: $e');
+      return 0.0;
+    }
   }
 
   /// GET /wallet/history?date=YYYY-MM-DD
+  /// Returns list of credit transactions for the given date.
   Future<List<CreditTransaction>> getWalletHistory(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockCreditTransactions;
+    try {
+      final response = await _apiClient.get(
+        '/wallet/history',
+        queryParameters: {'date': date},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) =>
+                CreditTransaction.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetWalletHistory error: $e');
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Meal Configuration
   // ---------------------------------------------------------------------------
 
-  /// POST /meals/config — Create meal config for tomorrow
+  /// POST /meals/config — Create meal config for tomorrow.
+  /// Backend expects SetMenuRequest: { mealType, menu, price, purchaseStartTime, purchaseEndTime }
   Future<bool> createMealConfig(MealConfig config) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint('CreateMealConfig: ${jsonEncode(config.toJson())}');
-    return true;
+    try {
+      final response = await _apiClient.post(
+        '/meals/config',
+        data: _buildSetMenuRequest(config),
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('CreateMealConfig error: $e');
+      return false;
+    }
   }
 
-  /// PUT /meals/config/{id} — Update existing meal config
+  /// PUT /meals/config/{id} — Update existing meal config.
   Future<bool> updateMealConfig(int id, MealConfig config) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint('UpdateMealConfig[$id]: ${jsonEncode(config.toJson())}');
-    return true;
+    try {
+      final response = await _apiClient.put(
+        '/meals/config/$id',
+        data: _buildSetMenuRequest(config),
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('UpdateMealConfig error: $e');
+      return false;
+    }
   }
 
   /// GET /meals/config/tomorrow
   Future<List<MealConfig>> getTomorrowConfig() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    final dateStr =
-        '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
-    return [
-      MealConfig(
-        id: 1,
-        date: dateStr,
-        mealType: MealType.lunch,
-        price: 55.0,
-        menu: 'Rice, Dal, Fish Curry, Salad',
-        purchaseDeadline: '22:00',
-      ),
-      MealConfig(
-        id: 2,
-        date: dateStr,
-        mealType: MealType.dinner,
-        price: 65.0,
-        menu: 'Rice, Chicken Curry, Vegetables, Dessert',
-        purchaseDeadline: '15:00',
-      ),
-    ];
+    try {
+      final response = await _apiClient.get('/meals/config/tomorrow');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) => MealConfig.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetTomorrowConfig error: $e');
+      return [];
+    }
   }
 
   /// GET /meals/config/{date}
   Future<List<MealConfig>> getMealConfigByDate(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [
-      MealConfig(
-        id: 1,
-        date: date,
-        mealType: MealType.lunch,
-        price: 55.0,
-        menu: 'Rice, Dal, Fish Curry, Salad',
-        purchaseDeadline: '22:00',
-      ),
-      MealConfig(
-        id: 2,
-        date: date,
-        mealType: MealType.dinner,
-        price: 65.0,
-        menu: 'Rice, Chicken Curry, Vegetables, Dessert',
-        purchaseDeadline: '15:00',
-      ),
-    ];
+    try {
+      final response = await _apiClient.get('/meals/config/$date');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) => MealConfig.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetMealConfigByDate error: $e');
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -123,22 +160,37 @@ class MealManagerService {
 
   /// GET /meals/availability/{date}
   Future<MealAvailability> getMealAvailability(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Mock: return default availability
-    return MealAvailability(
-      date: date,
-      isMealAvailable: true,
-      isLunchAvailable: true,
-      isDinnerAvailable: true,
-    );
+    try {
+      final response = await _apiClient.get('/meals/availability/$date');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        return MealAvailability.fromJson(body['data'] as Map<String, dynamic>);
+      }
+      return MealAvailability(date: date);
+    } catch (e) {
+      debugPrint('GetMealAvailability error: $e');
+      return MealAvailability(date: date);
+    }
   }
 
   /// PUT /meals/availability/{date}
+  /// Backend expects MealAvailabilityRequest: { date, isLunchAvailable, isDinnerAvailable }
   Future<bool> updateMealAvailability(MealAvailability availability) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint(
-        'UpdateMealAvailability: ${jsonEncode(availability.toJson())}');
-    return true;
+    try {
+      final response = await _apiClient.put(
+        '/meals/availability/${availability.date}',
+        data: {
+          'date': availability.date,
+          'isLunchAvailable': availability.isLunchAvailable,
+          'isDinnerAvailable': availability.isDinnerAvailable,
+        },
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('UpdateMealAvailability error: $e');
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -146,331 +198,293 @@ class MealManagerService {
   // ---------------------------------------------------------------------------
 
   /// GET /reports/sales?date=YYYY-MM-DD
+  /// Backend returns SalesReportResponse with a list of MealSalesDetail.
+  /// We extract lunch/dinner sold counts from the meals list.
   Future<Map<String, int>> getSalesReport(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {'lunchSold': 142, 'dinnerSold': 98};
+    try {
+      final response = await _apiClient.get(
+        '/reports/sales',
+        queryParameters: {'date': date},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        final meals = data['meals'] as List<dynamic>? ?? [];
+        int lunchSold = 0;
+        int dinnerSold = 0;
+        for (final meal in meals) {
+          final m = meal as Map<String, dynamic>;
+          final type = (m['mealType'] as String?)?.toUpperCase() ?? '';
+          final sold = (m['tokensSold'] as num?)?.toInt() ?? 0;
+          if (type == 'LUNCH') {
+            lunchSold = sold;
+          } else if (type == 'DINNER') {
+            dinnerSold = sold;
+          }
+        }
+        return {'lunchSold': lunchSold, 'dinnerSold': dinnerSold};
+      }
+      return {'lunchSold': 0, 'dinnerSold': 0};
+    } catch (e) {
+      debugPrint('GetSalesReport error: $e');
+      return {'lunchSold': 0, 'dinnerSold': 0};
+    }
   }
 
-  /// GET /reports/revenue?date=YYYY-MM-DD
+  /// GET /reports/sales?date=YYYY-MM-DD
+  /// Extracts revenue per meal type from the SalesReportResponse.
   Future<Map<String, double>> getRevenueReport(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {'lunchRevenue': 7810.0, 'dinnerRevenue': 6370.0};
+    try {
+      final response = await _apiClient.get(
+        '/reports/sales',
+        queryParameters: {'date': date},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        final meals = data['meals'] as List<dynamic>? ?? [];
+        double lunchRevenue = 0.0;
+        double dinnerRevenue = 0.0;
+        for (final meal in meals) {
+          final m = meal as Map<String, dynamic>;
+          final type = (m['mealType'] as String?)?.toUpperCase() ?? '';
+          final revenue = (m['revenue'] as num?)?.toDouble() ?? 0.0;
+          if (type == 'LUNCH') {
+            lunchRevenue = revenue;
+          } else if (type == 'DINNER') {
+            dinnerRevenue = revenue;
+          }
+        }
+        return {
+          'lunchRevenue': lunchRevenue,
+          'dinnerRevenue': dinnerRevenue,
+        };
+      }
+      return {'lunchRevenue': 0.0, 'dinnerRevenue': 0.0};
+    } catch (e) {
+      debugPrint('GetRevenueReport error: $e');
+      return {'lunchRevenue': 0.0, 'dinnerRevenue': 0.0};
+    }
   }
 
   /// GET /reports/wallet-topups?date=YYYY-MM-DD
+  /// Backend returns WalletTopupReportResponse; we map topups to CreditTransaction.
   Future<List<CreditTransaction>> getWalletTopups(String date) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockCreditTransactions;
+    try {
+      final response = await _apiClient.get(
+        '/reports/wallet-topups',
+        queryParameters: {'date': date},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        final topups = data['topups'] as List<dynamic>? ?? [];
+        return topups.map((e) {
+          final t = e as Map<String, dynamic>;
+          return CreditTransaction(
+            id: (t['transactionId'] ?? '').toString(),
+            studentId: (t['receiverId'] ?? '').toString(),
+            studentName: t['receiverName'] as String? ?? '',
+            amount: (t['amount'] as num?)?.toDouble() ?? 0.0,
+            timestamp: t['createdAt'] != null
+                ? DateTime.parse(t['createdAt'] as String)
+                : DateTime.now(),
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetWalletTopups error: $e');
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Today's Dashboard Data (aggregated)
   // ---------------------------------------------------------------------------
 
+  /// GET /dashboard
+  /// Backend returns ApiResponse<DashboardResponse>.
   Future<DashboardData> getDashboardData() async {
-    await Future.delayed(const Duration(milliseconds: 700));
-    return DashboardData(
-      lunchCount: 142,
-      dinnerCount: 98,
-      lunchRevenue: 7810.0,
-      dinnerRevenue: 6370.0,
-      totalStudents: 380,
-      todayTopUps: 12,
-      isLunchAvailable: true,
-      isDinnerAvailable: true,
-    );
+    try {
+      final response = await _apiClient.get('/dashboard');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        return DashboardData.fromJson(body['data'] as Map<String, dynamic>);
+      }
+      return const DashboardData(
+        lunchCount: 0,
+        dinnerCount: 0,
+        lunchRevenue: 0,
+        dinnerRevenue: 0,
+        totalStudents: 0,
+        todayTopUps: 0,
+      );
+    } catch (e) {
+      debugPrint('GetDashboardData error: $e');
+      return const DashboardData(
+        lunchCount: 0,
+        dinnerCount: 0,
+        lunchRevenue: 0,
+        dinnerRevenue: 0,
+        totalStudents: 0,
+        todayTopUps: 0,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------
   // History
   // ---------------------------------------------------------------------------
 
+  /// GET /history/meals
   Future<List<DailyMealHistory>> getMealHistory() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _mockMealHistory;
+    try {
+      final response = await _apiClient.get('/history/meals');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) =>
+                DailyMealHistory.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetMealHistory error: $e');
+      return [];
+    }
   }
 
+  /// GET /history/credits
   Future<List<DailyCreditHistory>> getCreditHistory() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _mockCreditHistory;
+    try {
+      final response = await _apiClient.get('/history/credits');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) =>
+                DailyCreditHistory.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetCreditHistory error: $e');
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Credit Refund
   // ---------------------------------------------------------------------------
 
-  /// GET /refunds/pending — Fetch cancelled meals eligible for refund
+  /// GET /refunds/pending — Fetch cancelled meals eligible for refund.
   Future<List<RefundableMeal>> getRefundableMeals() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _mockRefundableMeals;
+    try {
+      final response = await _apiClient.get('/refunds/pending');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) =>
+                RefundableMeal.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetRefundableMeals error: $e');
+      return [];
+    }
   }
 
-  /// GET /refunds/summary — Get refund summary stats
+  /// GET /refunds/summary — Get refund summary stats.
   Future<RefundSummary> getRefundSummary() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return const RefundSummary(
-      pendingCount: 3,
-      completedCount: 5,
-      totalAmountPending: 15950.0,
-      totalAmountRefunded: 28400.0,
-    );
+    try {
+      final response = await _apiClient.get('/refunds/summary');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        return RefundSummary.fromJson(body['data'] as Map<String, dynamic>);
+      }
+      return const RefundSummary(
+        pendingCount: 0,
+        completedCount: 0,
+        totalAmountPending: 0,
+        totalAmountRefunded: 0,
+      );
+    } catch (e) {
+      debugPrint('GetRefundSummary error: $e');
+      return const RefundSummary(
+        pendingCount: 0,
+        completedCount: 0,
+        totalAmountPending: 0,
+        totalAmountRefunded: 0,
+      );
+    }
   }
 
-  /// POST /refunds/process — Process refund for a single cancelled meal
+  /// POST /refunds/process — Process refund for a single cancelled meal.
   Future<bool> processRefund(String mealId) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint('ProcessRefund: mealId=$mealId');
-    return true;
+    try {
+      final response = await _apiClient.post(
+        '/refunds/process',
+        data: {'mealId': mealId},
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('ProcessRefund error: $e');
+      return false;
+    }
   }
 
-  /// POST /refunds/process-bulk — Process refund for multiple cancelled meals
+  /// POST /refunds/process-bulk — Process refund for multiple cancelled meals.
   Future<bool> processBulkRefund(List<String> mealIds) async {
-    await Future.delayed(const Duration(milliseconds: 1200));
-    debugPrint('ProcessBulkRefund: mealIds=$mealIds');
-    return true;
+    try {
+      final response = await _apiClient.post(
+        '/refunds/process-bulk',
+        data: {'mealIds': mealIds},
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['success'] == true;
+    } catch (e) {
+      debugPrint('ProcessBulkRefund error: $e');
+      return false;
+    }
   }
 
-  /// GET /refunds/history — Fetch already-processed refunds
+  /// GET /refunds/history — Fetch already-processed refunds.
   Future<List<RefundableMeal>> getRefundHistory() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _mockRefundHistory;
+    try {
+      final response = await _apiClient.get('/refunds/history');
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List<dynamic>;
+        return list
+            .map((e) =>
+                RefundableMeal.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('GetRefundHistory error: $e');
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------
-  // Mock Data
+  // Helper: Build SetMenuRequest body from MealConfig
   // ---------------------------------------------------------------------------
 
-  static final List<CreditTransaction> _mockCreditTransactions = [
-    CreditTransaction(
-      id: '1',
-      studentId: 'S2021001',
-      studentName: 'Rahim Uddin',
-      amount: 500.0,
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    CreditTransaction(
-      id: '2',
-      studentId: 'S2021045',
-      studentName: 'Fatima Akter',
-      amount: 750.0,
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-    CreditTransaction(
-      id: '3',
-      studentId: 'S2021112',
-      studentName: 'Karim Hasan',
-      amount: 1000.0,
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-    ),
-  ];
-
-  static final List<DailyMealHistory> _mockMealHistory = [
-    const DailyMealHistory(
-      date: 'March 1, 2026',
-      lunchCount: 142,
-      dinnerCount: 98,
-      lunchPrice: 55.0,
-      dinnerPrice: 65.0,
-    ),
-    const DailyMealHistory(
-      date: 'February 28, 2026',
-      lunchCount: 156,
-      dinnerCount: 112,
-      lunchPrice: 55.0,
-      dinnerPrice: 65.0,
-    ),
-    const DailyMealHistory(
-      date: 'February 27, 2026',
-      lunchCount: 138,
-      dinnerCount: 95,
-      lunchPrice: 55.0,
-      dinnerPrice: 65.0,
-    ),
-    const DailyMealHistory(
-      date: 'February 26, 2026',
-      lunchCount: 145,
-      dinnerCount: 103,
-      lunchPrice: 55.0,
-      dinnerPrice: 65.0,
-    ),
-    const DailyMealHistory(
-      date: 'February 25, 2026',
-      lunchCount: 151,
-      dinnerCount: 107,
-      lunchPrice: 55.0,
-      dinnerPrice: 65.0,
-    ),
-  ];
-
-  static final List<DailyCreditHistory> _mockCreditHistory = [
-    DailyCreditHistory(
-      date: 'March 1, 2026',
-      transactions: const [
-        CreditTransactionSummary(
-            id: '1',
-            studentId: 'S2021001',
-            studentName: 'Rahim Uddin',
-            amount: 500.0,
-            time: '10:30 AM'),
-        CreditTransactionSummary(
-            id: '2',
-            studentId: 'S2021045',
-            studentName: 'Fatima Akter',
-            amount: 750.0,
-            time: '11:15 AM'),
-        CreditTransactionSummary(
-            id: '3',
-            studentId: 'S2021112',
-            studentName: 'Karim Hasan',
-            amount: 1000.0,
-            time: '02:45 PM'),
-      ],
-    ),
-    DailyCreditHistory(
-      date: 'February 28, 2026',
-      transactions: const [
-        CreditTransactionSummary(
-            id: '4',
-            studentId: 'S2021078',
-            studentName: 'Nusrat Jahan',
-            amount: 600.0,
-            time: '09:20 AM'),
-        CreditTransactionSummary(
-            id: '5',
-            studentId: 'S2021023',
-            studentName: 'Tanvir Ahmed',
-            amount: 800.0,
-            time: '01:30 PM'),
-        CreditTransactionSummary(
-            id: '6',
-            studentId: 'S2021056',
-            studentName: 'Sumaiya Islam',
-            amount: 550.0,
-            time: '03:15 PM'),
-        CreditTransactionSummary(
-            id: '7',
-            studentId: 'S2021089',
-            studentName: 'Imran Khan',
-            amount: 900.0,
-            time: '04:00 PM'),
-      ],
-    ),
-    DailyCreditHistory(
-      date: 'February 27, 2026',
-      transactions: const [
-        CreditTransactionSummary(
-            id: '8',
-            studentId: 'S2021034',
-            studentName: 'Ayesha Siddiqua',
-            amount: 700.0,
-            time: '10:00 AM'),
-        CreditTransactionSummary(
-            id: '9',
-            studentId: 'S2021067',
-            studentName: 'Mehedi Hasan',
-            amount: 650.0,
-            time: '12:30 PM'),
-      ],
-    ),
-  ];
-  // ── Refundable meals mock data ──
-
-  static final List<RefundableMeal> _mockRefundableMeals = [
-    RefundableMeal(
-      id: 'R001',
-      date: '2026-03-05',
-      mealType: MealType.lunch,
-      tokensSold: 87,
-      pricePerToken: 55.0,
-      totalRefundAmount: 4785.0,
-      students: const [
-        StudentToken(
-          studentId: 'S2021001',
-          studentName: 'Rahim Uddin',
-          studentRoll: '2021-001',
-          amountPaid: 55.0,
-        ),
-        StudentToken(
-          studentId: 'S2021045',
-          studentName: 'Fatima Akter',
-          studentRoll: '2021-045',
-          amountPaid: 55.0,
-        ),
-        StudentToken(
-          studentId: 'S2021112',
-          studentName: 'Karim Hasan',
-          studentRoll: '2021-112',
-          amountPaid: 55.0,
-        ),
-      ],
-      status: RefundStatus.pending,
-    ),
-    RefundableMeal(
-      id: 'R002',
-      date: '2026-03-05',
-      mealType: MealType.dinner,
-      tokensSold: 62,
-      pricePerToken: 65.0,
-      totalRefundAmount: 4030.0,
-      students: const [
-        StudentToken(
-          studentId: 'S2021078',
-          studentName: 'Nusrat Jahan',
-          studentRoll: '2021-078',
-          amountPaid: 65.0,
-        ),
-        StudentToken(
-          studentId: 'S2021023',
-          studentName: 'Tanvir Ahmed',
-          studentRoll: '2021-023',
-          amountPaid: 65.0,
-        ),
-      ],
-      status: RefundStatus.pending,
-    ),
-    RefundableMeal(
-      id: 'R003',
-      date: '2026-03-08',
-      mealType: MealType.lunch,
-      tokensSold: 109,
-      pricePerToken: 55.0,
-      totalRefundAmount: 5995.0,
-      students: const [
-        StudentToken(
-          studentId: 'S2021034',
-          studentName: 'Ayesha Siddiqua',
-          studentRoll: '2021-034',
-          amountPaid: 55.0,
-        ),
-      ],
-      status: RefundStatus.pending,
-    ),
-  ];
-
-  static final List<RefundableMeal> _mockRefundHistory = [
-    RefundableMeal(
-      id: 'R100',
-      date: '2026-02-20',
-      mealType: MealType.lunch,
-      tokensSold: 95,
-      pricePerToken: 55.0,
-      totalRefundAmount: 5225.0,
-      students: const [],
-      status: RefundStatus.completed,
-      refundedAt: null,
-    ),
-    RefundableMeal(
-      id: 'R101',
-      date: '2026-02-20',
-      mealType: MealType.dinner,
-      tokensSold: 78,
-      pricePerToken: 65.0,
-      totalRefundAmount: 5070.0,
-      students: const [],
-      status: RefundStatus.completed,
-      refundedAt: null,
-    ),
-  ];
+  Map<String, dynamic> _buildSetMenuRequest(MealConfig config) {
+    return {
+      'mealType': config.mealType.name.toUpperCase(), // LUNCH or DINNER
+      'menu': config.menu,
+      'price': config.price,
+      if (config.purchaseDeadline != null)
+        'purchaseEndTime': '${config.date}T${config.purchaseDeadline}:00',
+    };
+  }
 }
 
 /// Aggregated dashboard data for today.
@@ -498,4 +512,17 @@ class DashboardData {
 
   int get totalMeals => lunchCount + dinnerCount;
   double get totalRevenue => lunchRevenue + dinnerRevenue;
+
+  factory DashboardData.fromJson(Map<String, dynamic> json) {
+    return DashboardData(
+      lunchCount: (json['lunchCount'] as num?)?.toInt() ?? 0,
+      dinnerCount: (json['dinnerCount'] as num?)?.toInt() ?? 0,
+      lunchRevenue: (json['lunchRevenue'] as num?)?.toDouble() ?? 0.0,
+      dinnerRevenue: (json['dinnerRevenue'] as num?)?.toDouble() ?? 0.0,
+      totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
+      todayTopUps: (json['todayTopUps'] as num?)?.toInt() ?? 0,
+      isLunchAvailable: json['isLunchAvailable'] as bool? ?? true,
+      isDinnerAvailable: json['isDinnerAvailable'] as bool? ?? true,
+    );
+  }
 }

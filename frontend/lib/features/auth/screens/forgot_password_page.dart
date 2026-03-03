@@ -17,7 +17,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   late final TextEditingController _emailController;
 
   bool _isLoading = false;
-  bool _otpSent = false;
 
   @override
   void initState() {
@@ -65,8 +64,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
       );
 
-      setState(() => _otpSent = true);
-
       // Navigate to OTP page after 1 second
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
@@ -76,15 +73,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           builder: (_) => OtpPage(
             email: _emailController.text.trim(),
             flowType: 'forgot_password',
-            onSuccess: () {
-              // After OTP verification, navigate to reset password page
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ResetPasswordPage(email: _emailController.text.trim()),
-                ),
-              );
-            },
+            onSuccess: () {},
           ),
         ),
       );

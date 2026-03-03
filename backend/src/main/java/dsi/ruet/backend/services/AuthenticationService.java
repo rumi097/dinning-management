@@ -10,8 +10,13 @@ import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
+import dsi.ruet.backend.models.Hall;
+import dsi.ruet.backend.models.enums.Role;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
+import dsi.ruet.backend.repositories.HallRepository;
+import dsi.ruet.backend.repositories.WalletRepository;
+import dsi.ruet.backend.models.Wallet;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +41,12 @@ public class AuthenticationService {
 
     @Autowired
     private StudentInfoRepository studentInfoRepository;
+
+    @Autowired
+    private HallRepository hallRepository;
+
+    @Autowired
+    private WalletRepository walletRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -99,13 +110,13 @@ public class AuthenticationService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
 
-        // Create student info if user role is STUDENT
+        // Create student info for all roles except DINING_MANAGER
         StudentInfo studentInfo = null;
-        if ("STUDENT".equals(user.getRole())) {
-            // Validate required student fields
+        if (user.getRole() != Role.DINING_MANAGER) {
+            // Validate required student info fields
             if (request.getRoll() == null || request.getPhoneNo() == null || request.getRoomNo()==null) {
                 throw new IllegalArgumentException(
-                    "For STUDENT role, roll, roomNo and phoneNo are required");
+                    "For " + user.getRole().name() + " role, roll, roomNo and phoneNo are required");
             }
 
             studentInfo = new StudentInfo();
@@ -123,6 +134,12 @@ public class AuthenticationService {
             studentInfoRepository.save(studentInfo);
         }
         
+        // Create a wallet for this user with 0 balance
+        Wallet wallet = new Wallet();
+        wallet.setUser(user);
+        wallet.setBalance(java.math.BigDecimal.ZERO);
+        walletRepository.save(wallet);
+
         // Return signup success response
         SignupResponse response = new SignupResponse();
         response.setEmail(user.getEmail());
@@ -164,13 +181,16 @@ public class AuthenticationService {
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
+        }
 
-        // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        // Include StudentInfo for all roles except DINING_MANAGER
+        if (user.getRole() != Role.DINING_MANAGER) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -185,7 +205,7 @@ public class AuthenticationService {
 
     /**
      * Get current logged in user info based on email from JWT token
-     * Returns user info with StudentInfo if role is STUDENT
+     * Returns user info with StudentInfo for non-DINING_MANAGER roles
      */
     public AuthResponse getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
@@ -194,14 +214,19 @@ public class AuthenticationService {
         // Build response with user info
         AuthResponse response = new AuthResponse();
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
+        
+        // Include hall info if present
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
+        }
 
-        // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        // Include StudentInfo for all roles except DINING_MANAGER
+        if (user.getRole() != Role.DINING_MANAGER) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -214,7 +239,7 @@ public class AuthenticationService {
         return response;
     }
 
-    // ==================== OTP VERIFICATION (Ready for Implementation) ====================
+    // ==================== OTP VERIFICATION (Ready for Implementation) ==
 
     /**
      * Send OTP to user's email (step 1 of signup flow)

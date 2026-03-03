@@ -38,6 +38,17 @@ class DailyCreditHistory {
     required this.transactions,
   });
 
+  factory DailyCreditHistory.fromJson(Map<String, dynamic> json) {
+    return DailyCreditHistory(
+      date: json['date'] as String,
+      transactions: (json['transactions'] as List<dynamic>?)
+              ?.map((e) =>
+                  CreditTransactionSummary.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
   double get totalAmount =>
       transactions.fold(0.0, (sum, t) => sum + t.amount);
 
