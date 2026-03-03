@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/auth/signup", "/auth/login","/auth/send-otp","/auth/verify-otp").permitAll()
+                        .requestMatchers("/auth/signup", "/auth/login","/auth/send-otp","/auth/verify-otp","/auth/reset-password").permitAll()
                         .requestMatchers("/admin/**").permitAll()
                         // Meal manager APIs under /api/v1
                         .requestMatchers("/api/v1/**").hasRole("MEAL_MANAGER")
