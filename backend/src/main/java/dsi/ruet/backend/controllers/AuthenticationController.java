@@ -6,6 +6,9 @@ import dsi.ruet.backend.dto.auth.SignupRequest;
 import dsi.ruet.backend.dto.auth.SignupResponse;
 import dsi.ruet.backend.dto.auth.OtpResponse;
 import dsi.ruet.backend.dto.auth.OtpVerificationResponse;
+import dsi.ruet.backend.dto.auth.ResetPasswordRequest;
+import dsi.ruet.backend.dto.ApiResponse;
+import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -71,16 +74,30 @@ public class AuthenticationController {
      * Send OTP endpoint (step 1 of signup process)
      * Frontend calls this when user clicks "Sign Up"
      * This endpoint:
-     * 1. Accepts user email
-     * 2. Generates OTP (fixed 123456 for testing)
-     * 3. Stores email-OTP pair temporarily
-     * 4. Returns success response
-     * Note: Actually sending OTP to email is not implemented yet
+     * 1. Validates email exists in Users table (must be created by admin first)
+     * 2. Generates OTP (6-digit random code)
+     * 3. Stores email-OTP pair temporarily with 5-minute expiry
+     * 4. Sends OTP to email
+     * 5. Returns success response
      */
     @PostMapping("/send-otp")
     public ResponseEntity<OtpResponse> sendOtp(@RequestParam String email) {
-        OtpResponse response = authenticationService.sendOtp(email);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        try {
+            OtpResponse response = authenticationService.sendOtp(email);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            OtpResponse errorResponse = new OtpResponse();
+            errorResponse.setEmail(email);
+            errorResponse.setMessage(e.getMessage());
+            errorResponse.setSuccess(false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            OtpResponse errorResponse = new OtpResponse();
+            errorResponse.setEmail(email);
+            errorResponse.setMessage(e.getMessage());
+            errorResponse.setSuccess(false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
@@ -96,5 +113,29 @@ public class AuthenticationController {
     public ResponseEntity<OtpVerificationResponse> verifyOtp(@RequestParam String email, @RequestParam String otp) {
         OtpVerificationResponse response = authenticationService.verifyOtp(email, otp);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Reset password endpoint
+     * Frontend calls this after user verifies email via OTP
+     * This endpoint:
+     * 1. Accepts email, newPassword, and confirmPassword
+     * 2. Validates passwords match
+     * 3. Hashes new password
+     * 4. Updates user password in database
+     * 5. Returns success/failure response
+     * 
+     * Assumption: Frontend only calls this when email is verified via OTP
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            ApiResponse<String> response = authenticationService.resetPassword(request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(new ApiResponse<>("Error: " + e.getMessage(), null), HttpStatus.BAD_REQUEST);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(new ApiResponse<>("Error: User not found", null), HttpStatus.NOT_FOUND);
+        }
     }
 }

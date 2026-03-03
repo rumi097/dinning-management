@@ -6,6 +6,8 @@ import dsi.ruet.backend.dto.auth.SignupRequest;
 import dsi.ruet.backend.dto.auth.SignupResponse;
 import dsi.ruet.backend.dto.auth.OtpResponse;
 import dsi.ruet.backend.dto.auth.OtpVerificationResponse;
+import dsi.ruet.backend.dto.auth.ResetPasswordRequest;
+import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
@@ -248,12 +250,14 @@ public class AuthenticationService {
      * @return OtpResponse indicating OTP was sent
      */
     public OtpResponse sendOtp(String email) {
-        // TODO: Later - check if email exists in Users table
-        
-        // For now: Accept any email
+        // Validate email is not empty
         if (email == null || email.isEmpty()) {
             throw new IllegalArgumentException("Email cannot be empty");
         }
+
+        // Check if email exists in Users table
+        userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found. Please contact administrator to create your account."));
 
         // Generate random 6-digit OTP
         String otp = generateOTP(email);
@@ -385,5 +389,34 @@ public class AuthenticationService {
             System.err.println("Failed to send OTP email to " + email + ": " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Reset user password after email verification
+     * Assumes frontend has already verified the email via OTP
+     * @param request ResetPasswordRequest with email, newPassword, confirmPassword
+     * @return ApiResponse indicating success/failure
+     */
+    @Transactional
+    public ApiResponse<String> resetPassword(ResetPasswordRequest request) {
+        // Validate passwords match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
+        // Validate password length
+        if (request.getNewPassword().length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+
+        // Find user by email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
+
+        // Hash and update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new ApiResponse<>("Password reset successfully", null);
     }
 }
