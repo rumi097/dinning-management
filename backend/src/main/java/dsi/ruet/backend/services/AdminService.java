@@ -46,7 +46,7 @@ public class AdminService {
                     .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + request.getHallId()));
             user.setHall(hall);
         }
-        user.setIsVerified(false);
+        user.setIsVerified(request.getIsVerified() != null ? request.getIsVerified() : false);
         user.setRole(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.STUDENT);
 
         user = userRepository.save(user);
