@@ -25,7 +25,8 @@ class DiningApp extends StatefulWidget {
 class _DiningAppState extends State<DiningApp> {
   bool _isLoggedIn = false;
   bool _isInitialized = false;
-  String _token = 'dev-token';
+  String _token = '';
+  String _userRole = '';
 
   @override
   void initState() {
@@ -34,13 +35,15 @@ class _DiningAppState extends State<DiningApp> {
   }
 
   Future<void> _checkLoginStatus() async {
-    // Always check stored login status, even on web (will return false if not available)
+    // Check stored login status
     final isLoggedIn = await ServiceLocator.tokenStorage.isLoggedIn();
     final token = await ServiceLocator.tokenStorage.getToken();
+    final role = await ServiceLocator.tokenStorage.getRole();
 
     setState(() {
       _isLoggedIn = isLoggedIn;
       _token = token ?? '';
+      _userRole = role ?? '';
       _isInitialized = true;
     });
   }
@@ -60,20 +63,31 @@ class _DiningAppState extends State<DiningApp> {
       );
     }
 
+    // Determine home screen based on login status and role
+    Widget homeScreen;
+    if (!_isLoggedIn) {
+      homeScreen = const LoginPage();
+    } else if (_userRole.toUpperCase() == 'MEAL_MANAGER' ||
+        _userRole.toUpperCase() == 'MANAGER') {
+      homeScreen = const ManagerDashboard();
+    } else {
+      // Default to student home for 'STUDENT' or other roles
+      homeScreen = StudentHome(token: _token);
+    }
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Digital Dining System',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: const ManagerDashboard(), // ← direct launch for testing
+      home: homeScreen,
       routes: {
         '/login': (_) => const LoginPage(),
         '/student-home': (_) => StudentHome(token: _token),
         '/meal-manager-home': (_) => const ManagerDashboard(),
         '/dining-manager-home': (_) =>
             const _PlaceholderPage(title: 'Dining Manager'),
-        '/home': (_) => const LoginPage(),
       },
     );
   }
