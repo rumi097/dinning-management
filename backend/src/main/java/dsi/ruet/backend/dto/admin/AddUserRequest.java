@@ -12,4 +12,5 @@ public class AddUserRequest {
     private String email;
     private Long hallId;     // optional, can be null if not assigned
     private String role;     // STUDENT, MEAL_MANAGER, DINING_MANAGER
+    private Boolean isVerified;  // optional, defaults to false in User entity
 }
