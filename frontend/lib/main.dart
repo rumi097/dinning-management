@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/features/auth/screens/login_page.dart';
+import 'package:frontend/features/meal_manager/screens/manager_dashboard.dart';
 import 'package:frontend/features/student/screens/student_home.dart';
 import 'core/theme/app_theme.dart';
 
@@ -65,12 +66,11 @@ class _DiningAppState extends State<DiningApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: _isLoggedIn ? StudentHome(token: _token) : const LoginPage(),
+      home: const ManagerDashboard(), // ← direct launch for testing
       routes: {
         '/login': (_) => const LoginPage(),
         '/student-home': (_) => StudentHome(token: _token),
-        '/meal-manager-home': (_) =>
-            const _PlaceholderPage(title: 'Meal Manager'),
+        '/meal-manager-home': (_) => const ManagerDashboard(),
         '/dining-manager-home': (_) =>
             const _PlaceholderPage(title: 'Dining Manager'),
         '/home': (_) => const LoginPage(),
