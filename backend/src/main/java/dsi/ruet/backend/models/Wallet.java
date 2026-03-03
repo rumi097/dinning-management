@@ -1,7 +1,6 @@
 package dsi.ruet.backend.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,17 +10,25 @@ import java.math.BigDecimal;
 @Table(name = "wallets")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Wallet {
 
+    /** Primary key — maps to the "user_id" column (the actual PK in PostgreSQL). */
     @Id
-    private Long id; // Shared PK with users.id
+    @Column(name = "user_id")
+    private Long userId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "id")
-    private User user;
+    /** The "id" column — also an FK to users.id, must equal userId. */
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-    @Column(precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
+
+    /** Convenience: set both userId (PK) and id from a User object. */
+    public void setUser(User user) {
+        if (user != null) {
+            this.userId = user.getId();
+            this.id = user.getId();
+        }
+    }
 }

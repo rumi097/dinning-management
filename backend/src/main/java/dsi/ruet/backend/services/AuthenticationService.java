@@ -109,13 +109,13 @@ public class AuthenticationService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
 
-        // Create student info if user role is STUDENT
+        // Create student info for all roles except DINING_MANAGER
         StudentInfo studentInfo = null;
-        if ("STUDENT".equals(user.getRole())) {
-            // Validate required student fields
+        if (!"DINING_MANAGER".equals(user.getRole())) {
+            // Validate required student info fields
             if (request.getRoll() == null || request.getPhoneNo() == null || request.getRoomNo()==null) {
                 throw new IllegalArgumentException(
-                    "For STUDENT role, roll, roomNo and phoneNo are required");
+                    "For " + user.getRole() + " role, roll, roomNo and phoneNo are required");
             }
 
             studentInfo = new StudentInfo();
@@ -193,8 +193,8 @@ public class AuthenticationService {
             }
         }
 
-        // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        // Include StudentInfo for all roles except DINING_MANAGER
+        if (!"DINING_MANAGER".equals(user.getRole())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -209,7 +209,7 @@ public class AuthenticationService {
 
     /**
      * Get current logged in user info based on email from JWT token
-     * Returns user info with StudentInfo if role is STUDENT
+     * Returns user info with StudentInfo for non-DINING_MANAGER roles
      */
     public AuthResponse getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
@@ -232,8 +232,8 @@ public class AuthenticationService {
             }
         }
 
-        // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        // Include StudentInfo for all roles except DINING_MANAGER
+        if (!"DINING_MANAGER".equals(user.getRole())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -246,7 +246,7 @@ public class AuthenticationService {
         return response;
     }
 
-    // ==================== OTP VERIFICATION (Ready for Implementation) ====================
+    // ==================== OTP VERIFICATION (Ready for Implementation) ==
 
     /**
      * Send OTP to user's email (step 1 of signup flow)

@@ -3,6 +3,7 @@ package dsi.ruet.backend.services;
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
 import dsi.ruet.backend.dto.admin.AddHallRequest;
+import dsi.ruet.backend.dto.admin.UserResponse;
 import dsi.ruet.backend.exception.DuplicateEmailException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
@@ -50,15 +51,20 @@ public class AdminService {
     }
     
 
-    public ApiResponse<List<User>> getAllUsers() {
+    public ApiResponse<List<UserResponse>> getAllUsers() {
         List<User> users = userRepository.findAll();
-        return new ApiResponse<>("All users retrieved successfully", users);
+        List<UserResponse> result = users.stream().map(user -> {
+            StudentInfo info = studentInfoRepository.findById(user.getId()).orElse(null);
+            return UserResponse.from(user, info);
+        }).toList();
+        return new ApiResponse<>("All users retrieved successfully", result);
     }
     
-    public ApiResponse<User> getUserByEmail(String email) {
+    public ApiResponse<UserResponse> getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        return new ApiResponse<>("User retrieved successfully", user);
+        StudentInfo info = studentInfoRepository.findById(user.getId()).orElse(null);
+        return new ApiResponse<>("User retrieved successfully", UserResponse.from(user, info));
     }
 
 
