@@ -12,7 +12,7 @@ public class MarketplacePostResponse {
     private String mealType;
     private String mealDate;
     private String mealMenu;
-    private Double mealPrice;
+    private Long mealPrice;
     private Long sellerId;
     private String sellerName;
     private Long buyerId;

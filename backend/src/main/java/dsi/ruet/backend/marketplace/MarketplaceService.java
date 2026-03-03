@@ -221,7 +221,7 @@ public class MarketplaceService {
 
         // === ATOMIC TRANSFER ===
         User seller = post.getSeller();
-        Double mealPrice = token.getMeal().getPrice();
+        Long mealPrice = token.getMeal().getPrice();
 
         // Credit transfer only for TRANSACTION payment type
         // TOPUP means payment is handled outside the app — no wallet changes

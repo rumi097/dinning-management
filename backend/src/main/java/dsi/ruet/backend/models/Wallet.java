@@ -20,16 +20,16 @@ public class Wallet {
     private User user;
 
     @Column(nullable = false)
-    private Double balance = 0.0;
+    private Long balance = 0L;
 
-    public void deduct(double amount) {
+    public void deduct(Long amount) {
         if (this.balance < amount) {
             throw new IllegalStateException("Insufficient balance");
         }
         this.balance -= amount;
     }
 
-    public void credit(double amount) {
+    public void credit(Long amount) {
         this.balance += amount;
     }
 }

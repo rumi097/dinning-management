@@ -27,7 +27,7 @@ public class CoinTransaction {
     private User receiver;
 
     @Column(nullable = false)
-    private Double amount;
+    private Long amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

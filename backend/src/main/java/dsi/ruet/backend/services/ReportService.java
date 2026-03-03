@@ -116,7 +116,7 @@ public class ReportService {
         if (!hallUserIds.isEmpty()) {
             topups = coinTransactionRepository.findTopUpsByReceiverIdsAndDate(
                     hallUserIds, startOfDay, endOfDay);
-            Double sumResult = coinTransactionRepository.sumTopUpsByReceiverIdsAndDate(
+            Long sumResult = coinTransactionRepository.sumTopUpsByReceiverIdsAndDate(
                     hallUserIds, startOfDay, endOfDay);
             totalAmount = sumResult != null ? BigDecimal.valueOf(sumResult) : BigDecimal.ZERO;
         }

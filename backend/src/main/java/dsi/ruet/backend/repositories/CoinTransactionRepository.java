@@ -25,7 +25,7 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
     @Query("SELECT COALESCE(SUM(ct.amount), 0) FROM CoinTransaction ct WHERE ct.type = dsi.ruet.backend.models.enums.TransactionType.TOPUP " +
            "AND ct.receiver.id IN :userIds " +
            "AND ct.createdAt >= :startOfDay AND ct.createdAt < :endOfDay")
-    Double sumTopUpsByReceiverIdsAndDate(
+    Long sumTopUpsByReceiverIdsAndDate(
             @Param("userIds") List<Long> userIds,
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);

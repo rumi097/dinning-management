@@ -12,6 +12,6 @@ public class TokenResponse {
     private String mealType;
     private String mealDate;
     private String menu;
-    private Double price;
+    private Long price;
     private String status;
 }

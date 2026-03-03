@@ -36,7 +36,7 @@ public class Meal {
     private String menu;
 
     @Column(nullable = false)
-    private Double price;
+    private Long price;
 
     @Column(name = "purchase_deadline")
     private LocalDateTime purchaseDeadline;
