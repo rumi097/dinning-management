@@ -14,6 +14,8 @@ import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
 import dsi.ruet.backend.repositories.HallRepository;
+import dsi.ruet.backend.repositories.WalletRepository;
+import dsi.ruet.backend.models.Wallet;
 import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +43,9 @@ public class AuthenticationService {
 
     @Autowired
     private HallRepository hallRepository;
+
+    @Autowired
+    private WalletRepository walletRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -128,6 +133,12 @@ public class AuthenticationService {
             studentInfoRepository.save(studentInfo);
         }
         
+        // Create a wallet for this user with 0 balance
+        Wallet wallet = new Wallet();
+        wallet.setUser(user);
+        wallet.setBalance(java.math.BigDecimal.ZERO);
+        walletRepository.save(wallet);
+
         // Return signup success response
         SignupResponse response = new SignupResponse();
         response.setEmail(user.getEmail());

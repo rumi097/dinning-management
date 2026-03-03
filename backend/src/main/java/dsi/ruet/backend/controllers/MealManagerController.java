@@ -16,13 +16,11 @@ import java.util.List;
 
 /**
  * REST controller for all Meal Manager operations.
- * Base path: /api/v1
- *
  * All endpoints require MEAL_MANAGER role.
  * Maps 1-to-1 with the frontend MealManagerService in dummy_api.md.
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping
 @PreAuthorize("hasRole('MEAL_MANAGER')")
 public class MealManagerController {
 
@@ -164,50 +162,6 @@ public class MealManagerController {
         Long managerId = getAuthenticatedUserId(authentication);
         ApiResponse<MealAvailabilityResponse> response =
                 mealManagerService.updateMealAvailability(date, request, managerId);
-        return ResponseEntity.ok(response);
-    }
-
-    // ==================== REPORTS ====================
-
-    /**
-     * GET /api/v1/reports/sales?date=2026-03-01
-     * Get token sales counts (lunch/dinner) for a date.
-     */
-    @GetMapping("/reports/sales")
-    public ResponseEntity<ApiResponse<SalesReportResponse>> getSalesReport(
-            @RequestParam String date,
-            Authentication authentication) {
-
-        Long managerId = getAuthenticatedUserId(authentication);
-        ApiResponse<SalesReportResponse> response = mealManagerService.getSalesReport(date, managerId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * GET /api/v1/reports/revenue?date=2026-03-01
-     * Get revenue breakdown (lunch/dinner) for a date.
-     */
-    @GetMapping("/reports/revenue")
-    public ResponseEntity<ApiResponse<RevenueReportResponse>> getRevenueReport(
-            @RequestParam String date,
-            Authentication authentication) {
-
-        Long managerId = getAuthenticatedUserId(authentication);
-        ApiResponse<RevenueReportResponse> response = mealManagerService.getRevenueReport(date, managerId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * GET /api/v1/reports/wallet-topups?date=2026-03-01
-     * Get all wallet top-up transactions for a date.
-     */
-    @GetMapping("/reports/wallet-topups")
-    public ResponseEntity<ApiResponse<List<CreditTransactionResponse>>> getWalletTopups(
-            @RequestParam String date,
-            Authentication authentication) {
-
-        Long managerId = getAuthenticatedUserId(authentication);
-        ApiResponse<List<CreditTransactionResponse>> response = mealManagerService.getWalletTopups(date, managerId);
         return ResponseEntity.ok(response);
     }
 
