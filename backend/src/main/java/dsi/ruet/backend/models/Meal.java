@@ -1,9 +1,8 @@
 package dsi.ruet.backend.models;
 
+import dsi.ruet.backend.models.enums.MealType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Meal {
 
     @Id
@@ -32,8 +32,9 @@ public class Meal {
     @Column(name = "meal_date", nullable = false)
     private LocalDate mealDate;
 
-    @Column(name = "meal_type", nullable = false, length = 10)
-    private String mealType; // LUNCH, DINNER
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meal_type", nullable = false)
+    private MealType mealType;
 
     @Column(name = "menu", columnDefinition = "TEXT")
     private String menu;

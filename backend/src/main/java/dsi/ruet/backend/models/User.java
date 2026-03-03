@@ -1,7 +1,9 @@
 package dsi.ruet.backend.models;
 
+import dsi.ruet.backend.models.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +18,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User implements UserDetails {
 
     @Id
@@ -25,29 +28,28 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false, length = 120)
     private String email;
 
-    // renamed from passwordHash → pass
-    @Column(nullable = false, length = 255)
+    @Column(name = "pass", length = 255)
     private String password;
 
     @Column(nullable = false, length = 120)
     private String name;
 
-    // If hall is another table later, we can convert this to @ManyToOne
-    @Column(nullable = false)
-    private Long hallId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hall_id", nullable = false)
+    private Hall hall;
 
     @Column(nullable = false)
     private Boolean isVerified = false;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String role; // STUDENT, MEAL_MANAGER, DINING_MANAGER
-
+    private Role role;
 
     /* ---------------- Spring Security ---------------- */
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
     @Override

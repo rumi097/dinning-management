@@ -1,6 +1,7 @@
 package dsi.ruet.backend.repositories;
 
 import dsi.ruet.backend.models.Meal;
+import dsi.ruet.backend.models.enums.MealType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,8 +19,8 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
     /** All meals for a hall on a specific date */
     List<Meal> findByHallIdAndMealDate(Long hallId, LocalDate mealDate);
 
-    /** Single meal for hall + date + type (unique combo) */
-    Optional<Meal> findByHallIdAndMealDateAndMealType(Long hallId, LocalDate mealDate, String mealType);
+    /** Single meal for hall + date + type (unique combo) - with enum */
+    Optional<Meal> findByHallIdAndMealDateAndMealType(Long hallId, LocalDate mealDate, MealType mealType);
 
     /** All meals for a hall */
     List<Meal> findByHallId(Long hallId);

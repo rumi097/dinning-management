@@ -30,9 +30,9 @@ public class UserResponse {
         r.setId(user.getId());
         r.setEmail(user.getEmail());
         r.setName(user.getName());
-        r.setHallId(user.getHallId());
+        r.setHallId(user.getHall() != null ? user.getHall().getId() : null);
         r.setIsVerified(user.getIsVerified());
-        r.setRole(user.getRole());
+        r.setRole(user.getRole() != null ? user.getRole().name() : null);
 
         if (info != null) {
             r.setRoll(info.getRoll());

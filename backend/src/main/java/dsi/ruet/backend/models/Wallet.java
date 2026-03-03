@@ -31,4 +31,24 @@ public class Wallet {
             this.id = user.getId();
         }
     }
+
+    /** Deduct amount from balance */
+    public void deduct(BigDecimal amount) {
+        this.balance = this.balance.subtract(amount);
+    }
+
+    /** Deduct amount (Long) from balance */
+    public void deduct(Long amount) {
+        this.balance = this.balance.subtract(BigDecimal.valueOf(amount));
+    }
+
+    /** Credit amount to balance */
+    public void credit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
+    /** Credit amount (Long) to balance */
+    public void credit(Long amount) {
+        this.balance = this.balance.add(BigDecimal.valueOf(amount));
+    }
 }

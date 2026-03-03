@@ -29,5 +29,4 @@ public class StudentInfo {
 
     @Column(name = "phone_no", nullable = false, length = 20)
     private String phoneNo;
-
 }

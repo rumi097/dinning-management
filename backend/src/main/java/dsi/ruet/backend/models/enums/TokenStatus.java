@@ -1,4 +1,4 @@
-package dsi.ruet.backend.models;
+package dsi.ruet.backend.models.enums;
 
 public enum TokenStatus {
     AVAILABLE,

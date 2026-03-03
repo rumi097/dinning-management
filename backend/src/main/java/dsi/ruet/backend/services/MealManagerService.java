@@ -4,6 +4,10 @@ import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.mealmanager.*;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.*;
+import dsi.ruet.backend.models.enums.MealType;
+import dsi.ruet.backend.models.enums.Role;
+import dsi.ruet.backend.models.enums.TokenStatus;
+import dsi.ruet.backend.models.enums.TransactionType;
 import dsi.ruet.backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -131,7 +135,7 @@ public class MealManagerService {
 
         List<CreditTransactionResponse> result = transactions.stream().map(tx -> {
             // Get student roll from StudentInfo (if available)
-            Long receiverId = tx.getReceiverId();
+            Long receiverId = tx.getReceiver().getId();
             String roll = studentInfoRepository.findById(receiverId)
                     .map(StudentInfo::getRoll).orElse(receiverId.toString());
             String receiverName = userRepository.findById(receiverId)
@@ -141,7 +145,7 @@ public class MealManagerService {
                     tx.getId().toString(),
                     roll,
                     receiverName,
-                    tx.getAmount(),
+                    BigDecimal.valueOf(tx.getAmount()),
                     tx.getCreatedAt()
             );
         }).toList();
@@ -158,15 +162,15 @@ public class MealManagerService {
      */
     @Transactional
     public ApiResponse<MealConfigResponse> createMealConfig(SetMenuRequest request, Long managerId) {
-        validateMealType(request.getMealType());
+        MealType mealType = parseMealType(request.getMealType());
 
         User manager = findUserById(managerId);
-        Hall hall = findHallById(manager.getHallId());
+        Hall hall = manager.getHall();
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
         // Check if config already exists
         Optional<Meal> existing = mealRepository.findByHallIdAndMealDateAndMealType(
-                hall.getId(), tomorrow, request.getMealType());
+                hall.getId(), tomorrow, mealType);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
                     request.getMealType() + " config already exists for " + tomorrow +
@@ -177,7 +181,7 @@ public class MealManagerService {
         Meal meal = new Meal();
         meal.setHall(hall);
         meal.setMealDate(tomorrow);
-        meal.setMealType(request.getMealType());
+        meal.setMealType(mealType);
         meal.setMenu(request.getMenu());
         meal.setPrice(request.getPrice());
         meal.setPurchaseStartTime(request.getPurchaseStartTime());
@@ -199,7 +203,7 @@ public class MealManagerService {
         Meal meal = findMealById(mealId);
 
         // Ensure meal belongs to manager's hall
-        if (!meal.getHall().getId().equals(manager.getHallId())) {
+        if (!meal.getHall().getId().equals(manager.getHall().getId())) {
             throw new IllegalArgumentException("You can only update meals for your own hall");
         }
 
@@ -207,8 +211,8 @@ public class MealManagerService {
         if (request.getMenu() != null) meal.setMenu(request.getMenu());
         if (request.getPrice() != null) meal.setPrice(request.getPrice());
         if (request.getMealType() != null) {
-            validateMealType(request.getMealType());
-            meal.setMealType(request.getMealType());
+            MealType mealType = parseMealType(request.getMealType());
+            meal.setMealType(mealType);
         }
         if (request.getPurchaseStartTime() != null) meal.setPurchaseStartTime(request.getPurchaseStartTime());
         if (request.getPurchaseEndTime() != null) meal.setPurchaseEndTime(request.getPurchaseEndTime());
@@ -225,7 +229,7 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), tomorrow);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), tomorrow);
         List<MealConfigResponse> configs = meals.stream()
                 .map(this::toMealConfigResponse).toList();
 
@@ -240,7 +244,7 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate date = LocalDate.parse(dateStr, DATE_FMT);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), date);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
         List<MealConfigResponse> configs = meals.stream()
                 .map(this::toMealConfigResponse).toList();
 
@@ -257,23 +261,23 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate date = LocalDate.parse(dateStr, DATE_FMT);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), date);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
 
         boolean lunchAvailable = true;
         boolean dinnerAvailable = true;
 
         for (Meal meal : meals) {
-            if ("LUNCH".equals(meal.getMealType()) && Boolean.TRUE.equals(meal.getIsClosed())) {
+            if (meal.getMealType() == MealType.LUNCH && Boolean.TRUE.equals(meal.getIsClosed())) {
                 lunchAvailable = false;
             }
-            if ("DINNER".equals(meal.getMealType()) && Boolean.TRUE.equals(meal.getIsClosed())) {
+            if (meal.getMealType() == MealType.DINNER && Boolean.TRUE.equals(meal.getIsClosed())) {
                 dinnerAvailable = false;
             }
         }
 
         // If no config exists for a meal type, it's "not available"
-        boolean hasLunch = meals.stream().anyMatch(m -> "LUNCH".equals(m.getMealType()));
-        boolean hasDinner = meals.stream().anyMatch(m -> "DINNER".equals(m.getMealType()));
+        boolean hasLunch = meals.stream().anyMatch(m -> m.getMealType() == MealType.LUNCH);
+        boolean hasDinner = meals.stream().anyMatch(m -> m.getMealType() == MealType.DINNER);
         if (!hasLunch) lunchAvailable = false;
         if (!hasDinner) dinnerAvailable = false;
 
@@ -299,17 +303,17 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate date = LocalDate.parse(dateStr, DATE_FMT);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), date);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
         int totalRefunds = 0;
 
         for (Meal meal : meals) {
             boolean shouldClose = false;
 
             // Check if this meal type should be closed
-            if ("LUNCH".equals(meal.getMealType()) && !request.isLunchAvailable()) {
+            if (meal.getMealType() == MealType.LUNCH && !request.isLunchAvailable()) {
                 shouldClose = true;
             }
-            if ("DINNER".equals(meal.getMealType()) && !request.isDinnerAvailable()) {
+            if (meal.getMealType() == MealType.DINNER && !request.isDinnerAvailable()) {
                 shouldClose = true;
             }
 
@@ -334,16 +338,16 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate date = LocalDate.parse(dateStr, DATE_FMT);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), date);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
 
         int lunchSold = 0;
         int dinnerSold = 0;
 
         for (Meal meal : meals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            if ("LUNCH".equals(meal.getMealType())) {
+            if (meal.getMealType() == MealType.LUNCH) {
                 lunchSold = (int) count;
-            } else if ("DINNER".equals(meal.getMealType())) {
+            } else if (meal.getMealType() == MealType.DINNER) {
                 dinnerSold = (int) count;
             }
         }
@@ -361,7 +365,7 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate date = LocalDate.parse(dateStr, DATE_FMT);
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), date);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
 
         double lunchRevenue = 0;
         double dinnerRevenue = 0;
@@ -369,9 +373,9 @@ public class MealManagerService {
         for (Meal meal : meals) {
             long count = tokenRepository.countByMealId(meal.getId());
             double revenue = meal.getPrice().multiply(java.math.BigDecimal.valueOf(count)).doubleValue();
-            if ("LUNCH".equals(meal.getMealType())) {
+            if (meal.getMealType() == MealType.LUNCH) {
                 lunchRevenue = revenue;
-            } else if ("DINNER".equals(meal.getMealType())) {
+            } else if (meal.getMealType() == MealType.DINNER) {
                 dinnerRevenue = revenue;
             }
         }
@@ -404,7 +408,7 @@ public class MealManagerService {
         User manager = findUserById(managerId);
         LocalDate today = LocalDate.now();
 
-        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHallId(), today);
+        List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), today);
 
         int lunchCount = 0;
         int dinnerCount = 0;
@@ -415,11 +419,11 @@ public class MealManagerService {
 
         for (Meal meal : meals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            if ("LUNCH".equals(meal.getMealType())) {
+            if (meal.getMealType() == MealType.LUNCH) {
                 lunchCount = (int) count;
                 lunchRevenue = count * meal.getPrice().doubleValue();
                 lunchAvailable = !Boolean.TRUE.equals(meal.getIsClosed());
-            } else if ("DINNER".equals(meal.getMealType())) {
+            } else if (meal.getMealType() == MealType.DINNER) {
                 dinnerCount = (int) count;
                 dinnerRevenue = count * meal.getPrice().doubleValue();
                 dinnerAvailable = !Boolean.TRUE.equals(meal.getIsClosed());
@@ -427,7 +431,7 @@ public class MealManagerService {
         }
 
         // Total students in this hall
-        int totalStudents = (int) userRepository.countByHallIdAndRole(manager.getHallId(), "STUDENT");
+        int totalStudents = (int) userRepository.countByHallIdAndRole(manager.getHall().getId(), Role.STUDENT);
 
         // Today's top-up count
         LocalDateTime dayStart = today.atStartOfDay();
@@ -456,7 +460,7 @@ public class MealManagerService {
         LocalDate startDate = endDate.minusDays(30);
 
         List<Meal> meals = mealRepository.findByHallIdAndMealDateBetweenOrderByMealDateDesc(
-                manager.getHallId(), startDate, endDate);
+                manager.getHall().getId(), startDate, endDate);
 
         // Group meals by date
         Map<LocalDate, List<Meal>> mealsByDate = meals.stream()
@@ -475,10 +479,10 @@ public class MealManagerService {
 
             for (Meal meal : dayMeals) {
                 long count = tokenRepository.countByMealId(meal.getId());
-                if ("LUNCH".equals(meal.getMealType())) {
+                if (meal.getMealType() == MealType.LUNCH) {
                     lunchCount = (int) count;
                     lunchPrice = meal.getPrice().doubleValue();
-                } else if ("DINNER".equals(meal.getMealType())) {
+                } else if (meal.getMealType() == MealType.DINNER) {
                     dinnerCount = (int) count;
                     dinnerPrice = meal.getPrice().doubleValue();
                 }
@@ -521,7 +525,7 @@ public class MealManagerService {
 
             List<DailyCreditHistoryResponse.CreditTransactionItem> items = dayTx.stream().map(tx -> {
                 // Resolve student roll number
-                Long receiverId = tx.getReceiverId();
+                Long receiverId = tx.getReceiver().getId();
                 String roll = studentInfoRepository.findById(receiverId)
                         .map(StudentInfo::getRoll).orElse(receiverId.toString());
                 String receiverName = userRepository.findById(receiverId)
@@ -531,7 +535,7 @@ public class MealManagerService {
                         tx.getId().toString(),
                         roll,
                         receiverName,
-                        tx.getAmount().doubleValue(),
+                        (double) tx.getAmount(),
                         tx.getCreatedAt().format(TIME_FMT)
                 );
             }).toList();
@@ -554,7 +558,7 @@ public class MealManagerService {
         User manager = findUserById(managerId);
 
         List<Meal> pendingMeals = mealRepository
-                .findByHallIdAndIsClosedTrueAndRefundedAtIsNull(manager.getHallId());
+                .findByHallIdAndIsClosedTrueAndRefundedAtIsNull(manager.getHall().getId());
 
         List<RefundableMealResponse> result = pendingMeals.stream()
                 .map(meal -> toRefundableMealResponse(meal, "PENDING"))
@@ -570,7 +574,7 @@ public class MealManagerService {
      */
     public ApiResponse<RefundSummaryResponse> getRefundSummary(Long managerId) {
         User manager = findUserById(managerId);
-        Long hallId = manager.getHallId();
+        Long hallId = manager.getHall().getId();
 
         int pendingCount = (int) mealRepository.countByHallIdAndIsClosedTrueAndRefundedAtIsNull(hallId);
         int completedCount = (int) mealRepository.countByHallIdAndIsClosedTrueAndRefundedAtIsNotNull(hallId);
@@ -597,7 +601,7 @@ public class MealManagerService {
         List<CoinTransaction> refundTxs = coinTransactionRepository
                 .findRefundsBySenderAndDateRange(managerId, start, end);
         totalRefunded = refundTxs.stream()
-                .map(tx -> tx.getAmount().doubleValue())
+                .map(tx -> (double) tx.getAmount())
                 .reduce(0.0, (a, b) -> a + b);
 
         RefundSummaryResponse resp = new RefundSummaryResponse(
@@ -617,7 +621,7 @@ public class MealManagerService {
         Meal meal = findMealById(mealId);
 
         // Validate: meal must belong to manager's hall
-        if (!meal.getHall().getId().equals(manager.getHallId())) {
+        if (!meal.getHall().getId().equals(manager.getHall().getId())) {
             throw new IllegalArgumentException("This meal does not belong to your hall");
         }
         // Validate: meal must be closed
@@ -652,7 +656,7 @@ public class MealManagerService {
             User manager = findUserById(managerId);
             Meal meal = findMealById(mealId);
 
-            if (!meal.getHall().getId().equals(manager.getHallId())) {
+            if (!meal.getHall().getId().equals(manager.getHall().getId())) {
                 continue; // skip meals not in manager's hall
             }
             if (!Boolean.TRUE.equals(meal.getIsClosed()) || meal.getRefundedAt() != null) {
@@ -677,7 +681,7 @@ public class MealManagerService {
 
         List<Meal> completedMeals = mealRepository
                 .findByHallIdAndIsClosedTrueAndRefundedAtIsNotNullOrderByRefundedAtDesc(
-                        manager.getHallId());
+                        manager.getHall().getId());
 
         List<RefundableMealResponse> result = completedMeals.stream()
                 .map(meal -> toRefundableMealResponse(meal, "COMPLETED"))
@@ -708,14 +712,16 @@ public class MealManagerService {
 
     /** Ensure manager and student belong to the same hall */
     private void verifySameHall(User manager, User student) {
-        if (!manager.getHallId().equals(student.getHallId())) {
+        if (!manager.getHall().getId().equals(student.getHall().getId())) {
             throw new IllegalArgumentException("Student does not belong to your hall");
         }
     }
 
-    /** Validate that mealType is either LUNCH or DINNER */
-    private void validateMealType(String mealType) {
-        if (!"LUNCH".equals(mealType) && !"DINNER".equals(mealType)) {
+    /** Parse meal type string to enum */
+    private MealType parseMealType(String mealType) {
+        try {
+            return MealType.valueOf(mealType.toUpperCase());
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Meal type must be LUNCH or DINNER");
         }
     }
@@ -731,12 +737,12 @@ public class MealManagerService {
     }
 
     /** Record a coin transaction between two users */
-    private void recordCoinTransaction(User sender, User receiver, BigDecimal amount, String type) {
+    private void recordCoinTransaction(User sender, User receiver, BigDecimal amount, String typeStr) {
         CoinTransaction tx = new CoinTransaction();
-        tx.setSenderId(sender.getId());
-        tx.setReceiverId(receiver.getId());
-        tx.setAmount(amount);
-        tx.setType(type);
+        tx.setSender(sender);
+        tx.setReceiver(receiver);
+        tx.setAmount(amount.longValue());
+        tx.setType("TOPUP".equalsIgnoreCase(typeStr) ? TransactionType.TOPUP : TransactionType.TRANSACTION);
         tx.setCreatedAt(LocalDateTime.now());
         coinTransactionRepository.save(tx);
     }
@@ -774,7 +780,7 @@ public class MealManagerService {
         return new RefundableMealResponse(
                 meal.getId().toString(),
                 meal.getMealDate().format(DATE_FMT),
-                meal.getMealType(),
+                meal.getMealType().name(),
                 tokensSold,
                 meal.getPrice().doubleValue(),
                 totalRefundAmount,
@@ -799,7 +805,7 @@ public class MealManagerService {
         return new MealConfigResponse(
                 meal.getId(),
                 meal.getMealDate().format(DATE_FMT),
-                meal.getMealType(),
+                meal.getMealType().name(),
                 meal.getPrice(),
                 meal.getMenu(),
                 deadline,

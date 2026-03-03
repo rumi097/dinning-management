@@ -11,6 +11,7 @@ import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.StudentInfo;
 import dsi.ruet.backend.models.Hall;
+import dsi.ruet.backend.models.enums.Role;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
 import dsi.ruet.backend.repositories.HallRepository;
@@ -111,11 +112,11 @@ public class AuthenticationService {
 
         // Create student info for all roles except DINING_MANAGER
         StudentInfo studentInfo = null;
-        if (!"DINING_MANAGER".equals(user.getRole())) {
+        if (user.getRole() != Role.DINING_MANAGER) {
             // Validate required student info fields
             if (request.getRoll() == null || request.getPhoneNo() == null || request.getRoomNo()==null) {
                 throw new IllegalArgumentException(
-                    "For " + user.getRole() + " role, roll, roomNo and phoneNo are required");
+                    "For " + user.getRole().name() + " role, roll, roomNo and phoneNo are required");
             }
 
             studentInfo = new StudentInfo();
@@ -180,21 +181,16 @@ public class AuthenticationService {
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
-        
-        // Fetch and include hall name if hallId is present
-        if (user.getHallId() != null) {
-            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
-            if (hall != null) {
-                response.setHallName(hall.getName());
-            }
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
         }
 
         // Include StudentInfo for all roles except DINING_MANAGER
-        if (!"DINING_MANAGER".equals(user.getRole())) {
+        if (user.getRole() != Role.DINING_MANAGER) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -218,22 +214,19 @@ public class AuthenticationService {
         // Build response with user info
         AuthResponse response = new AuthResponse();
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
         
-        // Fetch and include hall name if hallId is present
-        if (user.getHallId() != null) {
-            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
-            if (hall != null) {
-                response.setHallName(hall.getName());
-            }
+        // Include hall info if present
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
         }
 
         // Include StudentInfo for all roles except DINING_MANAGER
-        if (!"DINING_MANAGER".equals(user.getRole())) {
+        if (user.getRole() != Role.DINING_MANAGER) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
