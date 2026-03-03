@@ -54,3 +54,5 @@ target/
 *.jks
 *.pem
 *.key
+# Flutter generated macOS plugin file
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift

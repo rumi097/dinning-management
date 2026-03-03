@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
 import 'package:frontend/features/auth/models/signup_request.dart';
+import 'package:frontend/features/auth/screens/reset_password_page.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
@@ -25,6 +27,7 @@ class OtpPage extends StatefulWidget {
 class _OtpPageState extends State<OtpPage> {
   late final List<TextEditingController> _otpControllers;
   late final List<FocusNode> _otpFocusNodes;
+  Timer? _resendTimer;
 
   bool _isLoading = false;
   bool _isResending = false;
@@ -41,6 +44,7 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -52,10 +56,13 @@ class _OtpPageState extends State<OtpPage> {
 
   void _startResendTimer() {
     _resendCountdown = 60;
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted && _resendCountdown > 0) {
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
         setState(() => _resendCountdown--);
-        _startResendTimer();
+      }
+      if (_resendCountdown <= 0) {
+        timer.cancel();
       }
     });
   }
@@ -136,16 +143,12 @@ class _OtpPageState extends State<OtpPage> {
 
         if (!mounted) return;
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP verified! Please set your new password.'),
-            backgroundColor: Colors.green,
+        // Navigate to reset password page
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ResetPasswordPage(email: widget.email),
           ),
         );
-
-        // Call onSuccess callback for forgot password flow
-        widget.onSuccess();
       }
     } catch (e) {
       if (!mounted) return;
@@ -362,10 +365,9 @@ class _OtpPageState extends State<OtpPage> {
                             const SizedBox(height: 12),
 
                             // Clear button
-                            AppSecondaryButton(
-                              text: 'Clear',
+                            OutlinedButton(
                               onPressed: _clearOtp,
-                              width: double.infinity,
+                              child: const Text('Clear'),
                             ),
                             const SizedBox(height: 24),
 
@@ -382,11 +384,13 @@ class _OtpPageState extends State<OtpPage> {
                                 const SizedBox(height: 8),
                                 if (_resendCountdown > 0)
                                   Text(
-                                    'Resend in $_resendCountdown seconds',
+                                    'Resend in ${_resendCountdown.toString().padLeft(2, '0')}s',
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelMedium
-                                        ?.copyWith(color: scheme.primary),
+                                        ?.copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
                                   )
                                 else
                                   TextButton(
@@ -395,7 +399,7 @@ class _OtpPageState extends State<OtpPage> {
                                         : _handleResendOtp,
                                     child: _isResending
                                         ? SizedBox(
-                                            height: 20,
+                                            height: 16,
                                             width: 20,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
@@ -406,7 +410,7 @@ class _OtpPageState extends State<OtpPage> {
                                             ),
                                           )
                                         : Text(
-                                            'Resend Code',
+                                            'Resend OTP',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .labelMedium
