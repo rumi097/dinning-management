@@ -134,7 +134,7 @@ public class AuthenticationController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(new ApiResponse<>("Error: " + e.getMessage(), null), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
+        } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(new ApiResponse<>("Error: User not found", null), HttpStatus.NOT_FOUND);
         }
     }
