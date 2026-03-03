@@ -1,35 +1,54 @@
 package dsi.ruet.backend.models;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "wallets")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Wallet {
 
+    /** Primary key — maps to the "user_id" column (the actual PK in PostgreSQL). */
     @Id
+    @Column(name = "user_id")
+    private Long userId;
+
+    /** The "id" column — also an FK to users.id, must equal userId. */
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "id")
-    private User user;
+    @Column(precision = 10, scale = 2, nullable = false)
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    @Column(nullable = false)
-    private Long balance = 0L;
-
-    public void deduct(Long amount) {
-        if (this.balance < amount) {
-            throw new IllegalStateException("Insufficient balance");
+    /** Convenience: set both userId (PK) and id from a User object. */
+    public void setUser(User user) {
+        if (user != null) {
+            this.userId = user.getId();
+            this.id = user.getId();
         }
-        this.balance -= amount;
     }
 
+    /** Deduct amount from balance */
+    public void deduct(BigDecimal amount) {
+        this.balance = this.balance.subtract(amount);
+    }
+
+    /** Deduct amount (Long) from balance */
+    public void deduct(Long amount) {
+        this.balance = this.balance.subtract(BigDecimal.valueOf(amount));
+    }
+
+    /** Credit amount to balance */
+    public void credit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
+    /** Credit amount (Long) to balance */
     public void credit(Long amount) {
-        this.balance += amount;
+        this.balance = this.balance.add(BigDecimal.valueOf(amount));
     }
 }

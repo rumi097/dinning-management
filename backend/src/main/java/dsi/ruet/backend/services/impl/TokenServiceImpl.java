@@ -62,7 +62,7 @@ public class TokenServiceImpl implements TokenService {
         Wallet wallet = walletRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found. Please contact admin."));
 
-        if (wallet.getBalance() < meal.getPrice()) {
+        if (wallet.getBalance().compareTo(meal.getPrice()) < 0) {
             throw new IllegalStateException("Insufficient wallet balance. Required: " + meal.getPrice()
                     + ", Available: " + wallet.getBalance());
         }
@@ -307,7 +307,7 @@ public class TokenServiceImpl implements TokenService {
                 .mealId(meal.getId())
                 .mealType(meal.getMealType().name())
                 .mealDate(meal.getMealDate())
-                .price(BigDecimal.valueOf(meal.getPrice()))
+                .price(meal.getPrice())
                 .menu(meal.getMenu())
                 .status(token.getStatus().name())
                 .ownerName(token.getOwner().getName())

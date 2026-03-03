@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -221,7 +222,7 @@ public class MarketplaceService {
 
         // === ATOMIC TRANSFER ===
         User seller = post.getSeller();
-        Long mealPrice = token.getMeal().getPrice();
+        BigDecimal mealPrice = token.getMeal().getPrice();
 
         // Credit transfer only for TRANSACTION payment type
         // TOPUP means payment is handled outside the app — no wallet changes
@@ -229,7 +230,7 @@ public class MarketplaceService {
             // 1. Deduct from buyer's wallet
             Wallet buyerWallet = walletRepository.findById(buyer.getId())
                     .orElseThrow(() -> new MarketplaceException("Buyer wallet not found"));
-            if (buyerWallet.getBalance() < mealPrice) {
+            if (buyerWallet.getBalance().compareTo(mealPrice) < 0) {
                 throw new MarketplaceException("Buyer has insufficient balance. Required: " + mealPrice);
             }
             buyerWallet.deduct(mealPrice);
@@ -245,7 +246,7 @@ public class MarketplaceService {
             CoinTransaction coinTx = CoinTransaction.builder()
                     .sender(buyer)
                     .receiver(seller)
-                    .amount(mealPrice)
+                    .amount(mealPrice.longValue())
                     .type(TransactionType.TRANSACTION)
                     .build();
             coinTransactionRepository.save(coinTx);
@@ -507,7 +508,7 @@ public class MarketplaceService {
                 .mealType(token.getMeal().getMealType().name())
                 .mealDate(token.getMeal().getMealDate().toString())
                 .mealMenu(token.getMeal().getMenu())
-                .mealPrice(token.getMeal().getPrice())
+                .mealPrice(token.getMeal().getPrice().longValue())
                 .sellerId(post.getSeller().getId())
                 .sellerName(post.getSeller().getName())
                 .buyerId(post.getBuyer() != null ? post.getBuyer().getId() : null)
@@ -527,7 +528,7 @@ public class MarketplaceService {
                 .mealType(token.getMeal().getMealType().name())
                 .mealDate(token.getMeal().getMealDate().toString())
                 .menu(token.getMeal().getMenu())
-                .price(token.getMeal().getPrice())
+                .price(token.getMeal().getPrice().longValue())
                 .status(token.getStatus().name())
                 .build();
     }

@@ -58,7 +58,7 @@ public class ReportService {
             long sold = tokenRepository.countByMealId(meal.getId());
             long used = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.USED);
             long active = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.AVAILABLE);
-            BigDecimal price = BigDecimal.valueOf(meal.getPrice());
+            BigDecimal price = meal.getPrice();
             BigDecimal revenue = price.multiply(BigDecimal.valueOf(sold));
 
             totalTokens += sold;
@@ -171,7 +171,7 @@ public class ReportService {
 
         for (Meal meal : todayMeals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            BigDecimal mealRevenue = BigDecimal.valueOf(meal.getPrice()).multiply(BigDecimal.valueOf(count));
+            BigDecimal mealRevenue = meal.getPrice().multiply(BigDecimal.valueOf(count));
             todayRevenue = todayRevenue.add(mealRevenue);
 
             if ("LUNCH".equals(meal.getMealType().name())) {
@@ -192,7 +192,7 @@ public class ReportService {
 
         for (Meal meal : tomorrowMeals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            BigDecimal mealRevenue = BigDecimal.valueOf(meal.getPrice()).multiply(BigDecimal.valueOf(count));
+            BigDecimal mealRevenue = meal.getPrice().multiply(BigDecimal.valueOf(count));
             tomorrowRevenue = tomorrowRevenue.add(mealRevenue);
 
             if ("LUNCH".equals(meal.getMealType().name())) {
@@ -205,7 +205,7 @@ public class ReportService {
             config.setMealId(meal.getId());
             config.setMealType(meal.getMealType().name());
             config.setMenu(meal.getMenu());
-            config.setPrice(BigDecimal.valueOf(meal.getPrice()));
+            config.setPrice(meal.getPrice());
             config.setPurchaseDeadline(meal.getPurchaseDeadline() != null ? meal.getPurchaseDeadline().toString() : null);
             config.setTokensSold(count);
             configs.add(config);

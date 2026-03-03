@@ -17,28 +17,23 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     // === Marketplace methods ===
     List<Token> findByOwnerId(Long ownerId);
-
     List<Token> findByOwnerIdAndStatus(Long ownerId, TokenStatus status);
-
     boolean existsByOwnerIdAndMealId(Long ownerId, Long mealId);
 
-    // === Student token service methods ===
-    List<Token> findByOwnerOrderByCreatedAtDesc(User owner);
-
-    boolean existsByOwnerAndMeal(User owner, Meal meal);
-
-    Optional<Token> findByQrCode(String qrCode);
-
-    // === Report methods ===
+    // === Meal-manager queries ===
     List<Token> findByMealId(Long mealId);
-
-    List<Token> findByMealIdIn(List<Long> mealIds);
-
+    Optional<Token> findByMealIdAndOwnerId(Long mealId, Long ownerId);
     long countByMealId(Long mealId);
+    List<Token> findByMealIdIn(List<Long> mealIds);
 
     @Query("SELECT COUNT(t) FROM Token t WHERE t.meal.id IN :mealIds")
     long countByMealIdIn(@Param("mealIds") List<Long> mealIds);
 
     @Query("SELECT COUNT(t) FROM Token t WHERE t.meal.id = :mealId AND t.status = :status")
     long countByMealIdAndStatus(@Param("mealId") Long mealId, @Param("status") TokenStatus status);
+
+    // === Student token service methods ===
+    List<Token> findByOwnerOrderByCreatedAtDesc(User owner);
+    boolean existsByOwnerAndMeal(User owner, Meal meal);
+    Optional<Token> findByQrCode(String qrCode);
 }

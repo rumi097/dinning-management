@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
 import dsi.ruet.backend.dto.admin.AddHallRequest;
+import dsi.ruet.backend.dto.admin.UserResponse;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.services.AdminService;
@@ -37,8 +38,8 @@ public class AdminController {
      * Get user by email
      */
     @GetMapping("/user")
-    public ResponseEntity<ApiResponse<User>> getUserByEmail(@RequestParam String email) {
-        ApiResponse<User> response = adminService.getUserByEmail(email);
+    public ResponseEntity<ApiResponse<UserResponse>> getUserByEmail(@RequestParam String email) {
+        ApiResponse<UserResponse> response = adminService.getUserByEmail(email);
         return ResponseEntity.ok(response);
     }
 
@@ -46,8 +47,8 @@ public class AdminController {
      * Get all users
      */
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
-        ApiResponse<List<User>> response = adminService.getAllUsers();
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        ApiResponse<List<UserResponse>> response = adminService.getAllUsers();
         return ResponseEntity.ok(response);
     }
 
