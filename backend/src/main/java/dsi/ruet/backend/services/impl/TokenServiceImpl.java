@@ -3,6 +3,7 @@ package dsi.ruet.backend.services.impl;
 import dsi.ruet.backend.dto.token.*;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.*;
+import dsi.ruet.backend.models.enums.TokenStatus;
 import dsi.ruet.backend.repositories.*;
 import dsi.ruet.backend.services.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,13 +62,13 @@ public class TokenServiceImpl implements TokenService {
         Wallet wallet = walletRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found. Please contact admin."));
 
-        if (wallet.getBalance().compareTo(meal.getPrice()) < 0) {
+        if (wallet.getBalance() < meal.getPrice()) {
             throw new IllegalStateException("Insufficient wallet balance. Required: " + meal.getPrice()
                     + ", Available: " + wallet.getBalance());
         }
 
         // 5. Deduct wallet balance
-        wallet.setBalance(wallet.getBalance().subtract(meal.getPrice()));
+        wallet.deduct(meal.getPrice());
         walletRepository.save(wallet);
 
         // 6. Create the token
@@ -110,7 +111,7 @@ public class TokenServiceImpl implements TokenService {
 
         // Only the owner or an ADMIN can view the token
         if (!token.getOwner().getId().equals(currentUser.getId())
-                && !"ADMIN".equals(currentUser.getRole())) {
+                && !"ADMIN".equals(currentUser.getRole().name())) {
             throw new IllegalStateException("You do not have permission to view this token.");
         }
 
@@ -178,7 +179,7 @@ public class TokenServiceImpl implements TokenService {
                     .valid(false)
                     .tokenId(token.getId())
                     .ownerName(token.getOwner().getName())
-                    .mealType(token.getMeal().getMealType())
+                    .mealType(token.getMeal().getMealType().name())
                     .mealDate(token.getMeal().getMealDate())
                     .status(token.getStatus().name())
                     .message("Token has already been used.")
@@ -191,7 +192,7 @@ public class TokenServiceImpl implements TokenService {
                     .valid(false)
                     .tokenId(token.getId())
                     .ownerName(token.getOwner().getName())
-                    .mealType(token.getMeal().getMealType())
+                    .mealType(token.getMeal().getMealType().name())
                     .mealDate(token.getMeal().getMealDate())
                     .status(token.getStatus().name())
                     .message("Token is not active. Status: " + token.getStatus())
@@ -205,7 +206,7 @@ public class TokenServiceImpl implements TokenService {
                     .valid(false)
                     .tokenId(token.getId())
                     .ownerName(token.getOwner().getName())
-                    .mealType(meal.getMealType())
+                    .mealType(meal.getMealType().name())
                     .mealDate(meal.getMealDate())
                     .status(token.getStatus().name())
                     .message("Token is not for today's meal. Meal date: " + meal.getMealDate())
@@ -217,7 +218,7 @@ public class TokenServiceImpl implements TokenService {
                 .valid(true)
                 .tokenId(token.getId())
                 .ownerName(token.getOwner().getName())
-                .mealType(meal.getMealType())
+                .mealType(meal.getMealType().name())
                 .mealDate(meal.getMealDate())
                 .status(token.getStatus().name())
                 .message("Token is valid. Ready to serve.")
@@ -304,9 +305,9 @@ public class TokenServiceImpl implements TokenService {
         return TokenResponse.builder()
                 .id(token.getId())
                 .mealId(meal.getId())
-                .mealType(meal.getMealType())
+                .mealType(meal.getMealType().name())
                 .mealDate(meal.getMealDate())
-                .price(meal.getPrice())
+                .price(BigDecimal.valueOf(meal.getPrice()))
                 .menu(meal.getMenu())
                 .status(token.getStatus().name())
                 .ownerName(token.getOwner().getName())

@@ -1,27 +1,35 @@
 package dsi.ruet.backend.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
+import lombok.*;
 
 @Entity
 @Table(name = "wallets")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Wallet {
 
     @Id
-    private Long id; // Shared PK with users.id
+    private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "id")
     private User user;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal balance = BigDecimal.ZERO;
+    @Column(nullable = false)
+    private Long balance = 0L;
+
+    public void deduct(Long amount) {
+        if (this.balance < amount) {
+            throw new IllegalStateException("Insufficient balance");
+        }
+        this.balance -= amount;
+    }
+
+    public void credit(Long amount) {
+        this.balance += amount;
+    }
 }

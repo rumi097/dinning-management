@@ -1,11 +1,9 @@
 package dsi.ruet.backend.models;
 
+import dsi.ruet.backend.models.enums.MealType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -16,27 +14,30 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Meal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "hall_id", nullable = false)
-    private Long hallId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hall_id", nullable = false)
+    private Hall hall;
 
     @Column(name = "meal_date", nullable = false)
     private LocalDate mealDate;
 
-    @Column(name = "meal_type", nullable = false, length = 10)
-    private String mealType; // LUNCH, DINNER
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meal_type", nullable = false)
+    private MealType mealType;
 
     @Column(columnDefinition = "TEXT")
     private String menu;
 
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal price;
+    @Column(nullable = false)
+    private Long price;
 
-    @Column(name = "purchase_deadline", nullable = false)
+    @Column(name = "purchase_deadline")
     private LocalDateTime purchaseDeadline;
 }

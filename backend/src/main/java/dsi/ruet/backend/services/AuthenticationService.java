@@ -106,7 +106,7 @@ public class AuthenticationService {
 
         // Create student info if user role is STUDENT
         StudentInfo studentInfo = null;
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             // Validate required student fields
             if (request.getRoll() == null || request.getPhoneNo() == null || request.getRoomNo()==null) {
                 throw new IllegalArgumentException(
@@ -169,21 +169,16 @@ public class AuthenticationService {
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
-        
-        // Fetch and include hall name if hallId is present
-        if (user.getHallId() != null) {
-            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
-            if (hall != null) {
-                response.setHallName(hall.getName());
-            }
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
         }
 
         // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {
@@ -207,22 +202,19 @@ public class AuthenticationService {
         // Build response with user info
         AuthResponse response = new AuthResponse();
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setRole(user.getRole().name());
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setHallId(user.getHallId());  // Include for all users
         response.setToken(null); // No token in /me endpoint
         
-        // Fetch and include hall name if hallId is present
-        if (user.getHallId() != null) {
-            Hall hall = hallRepository.findById(user.getHallId()).orElse(null);
-            if (hall != null) {
-                response.setHallName(hall.getName());
-            }
+        // Include hall info if present
+        if (user.getHall() != null) {
+            response.setHallId(user.getHall().getId());
+            response.setHallName(user.getHall().getName());
         }
 
         // If student role, include StudentInfo
-        if ("STUDENT".equals(user.getRole())) {
+        if ("STUDENT".equals(user.getRole().name())) {
             StudentInfo studentInfo = studentInfoRepository.findById(user.getId())
                     .orElse(null);
             if (studentInfo != null) {

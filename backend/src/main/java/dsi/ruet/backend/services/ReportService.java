@@ -7,8 +7,8 @@ import dsi.ruet.backend.dto.manager.WalletTopupReportResponse;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.CoinTransaction;
 import dsi.ruet.backend.models.Meal;
-import dsi.ruet.backend.models.TokenStatus;
 import dsi.ruet.backend.models.User;
+import dsi.ruet.backend.models.enums.TokenStatus;
 import dsi.ruet.backend.repositories.CoinTransactionRepository;
 import dsi.ruet.backend.repositories.MealRepository;
 import dsi.ruet.backend.repositories.TokenRepository;
@@ -45,7 +45,7 @@ public class ReportService {
      */
     public ApiResponse<SalesReportResponse> getSalesReport(String email, String dateStr) {
         User manager = getManager(email);
-        Long hallId = manager.getHallId();
+        Long hallId = manager.getHall().getId();
         LocalDate date = LocalDate.parse(dateStr);
 
         List<Meal> meals = mealRepository.findByHallIdAndMealDate(hallId, date);
@@ -58,16 +58,17 @@ public class ReportService {
             long sold = tokenRepository.countByMealId(meal.getId());
             long used = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.USED);
             long active = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.AVAILABLE);
-            BigDecimal revenue = meal.getPrice().multiply(BigDecimal.valueOf(sold));
+            BigDecimal price = BigDecimal.valueOf(meal.getPrice());
+            BigDecimal revenue = price.multiply(BigDecimal.valueOf(sold));
 
             totalTokens += sold;
             totalRevenue = totalRevenue.add(revenue);
 
             SalesReportResponse.MealSalesDetail detail = new SalesReportResponse.MealSalesDetail();
             detail.setMealId(meal.getId());
-            detail.setMealType(meal.getMealType());
+            detail.setMealType(meal.getMealType().name());
             detail.setMenu(meal.getMenu());
-            detail.setPrice(meal.getPrice());
+            detail.setPrice(price);
             detail.setTokensSold(sold);
             detail.setTokensUsed(used);
             detail.setTokensActive(active);
@@ -90,12 +91,12 @@ public class ReportService {
      */
     public ApiResponse<WalletTopupReportResponse> getWalletTopupReport(String email, String dateStr) {
         User manager = getManager(email);
-        Long hallId = manager.getHallId();
+        Long hallId = manager.getHall().getId();
         LocalDate date = LocalDate.parse(dateStr);
 
         // Get all users in this hall
         List<User> hallUsers = userRepository.findAll().stream()
-                .filter(u -> hallId.equals(u.getHallId()))
+                .filter(u -> u.getHall() != null && hallId.equals(u.getHall().getId()))
                 .collect(Collectors.toList());
 
         List<Long> hallUserIds = hallUsers.stream()
@@ -115,20 +116,22 @@ public class ReportService {
         if (!hallUserIds.isEmpty()) {
             topups = coinTransactionRepository.findTopUpsByReceiverIdsAndDate(
                     hallUserIds, startOfDay, endOfDay);
-            totalAmount = coinTransactionRepository.sumTopUpsByReceiverIdsAndDate(
+            Long sumResult = coinTransactionRepository.sumTopUpsByReceiverIdsAndDate(
                     hallUserIds, startOfDay, endOfDay);
+            totalAmount = sumResult != null ? BigDecimal.valueOf(sumResult) : BigDecimal.ZERO;
         }
 
         List<WalletTopupReportResponse.TopupDetail> topupDetails = new ArrayList<>();
         for (CoinTransaction tx : topups) {
             WalletTopupReportResponse.TopupDetail detail = new WalletTopupReportResponse.TopupDetail();
             detail.setTransactionId(tx.getId());
-            detail.setSenderId(tx.getSenderId());
-            detail.setReceiverId(tx.getReceiverId());
-            detail.setAmount(tx.getAmount());
+            detail.setSenderId(tx.getSender() != null ? tx.getSender().getId() : null);
+            detail.setReceiverId(tx.getReceiver() != null ? tx.getReceiver().getId() : null);
+            detail.setAmount(BigDecimal.valueOf(tx.getAmount()));
             detail.setCreatedAt(tx.getCreatedAt());
 
-            User receiver = userMap.get(tx.getReceiverId());
+            Long receiverId = tx.getReceiver() != null ? tx.getReceiver().getId() : null;
+            User receiver = receiverId != null ? userMap.get(receiverId) : null;
             if (receiver != null) {
                 detail.setReceiverName(receiver.getName());
                 detail.setReceiverEmail(receiver.getEmail());
@@ -151,7 +154,7 @@ public class ReportService {
      */
     public ApiResponse<SalesSummaryResponse> getSalesSummary(String email) {
         User manager = getManager(email);
-        Long hallId = manager.getHallId();
+        Long hallId = manager.getHall().getId();
 
         LocalDate today = LocalDate.now();
         LocalDate tomorrow = today.plusDays(1);
@@ -168,12 +171,12 @@ public class ReportService {
 
         for (Meal meal : todayMeals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            BigDecimal mealRevenue = meal.getPrice().multiply(BigDecimal.valueOf(count));
+            BigDecimal mealRevenue = BigDecimal.valueOf(meal.getPrice()).multiply(BigDecimal.valueOf(count));
             todayRevenue = todayRevenue.add(mealRevenue);
 
-            if ("LUNCH".equals(meal.getMealType())) {
+            if ("LUNCH".equals(meal.getMealType().name())) {
                 todayLunch = count;
-            } else if ("DINNER".equals(meal.getMealType())) {
+            } else if ("DINNER".equals(meal.getMealType().name())) {
                 todayDinner = count;
             }
         }
@@ -189,21 +192,21 @@ public class ReportService {
 
         for (Meal meal : tomorrowMeals) {
             long count = tokenRepository.countByMealId(meal.getId());
-            BigDecimal mealRevenue = meal.getPrice().multiply(BigDecimal.valueOf(count));
+            BigDecimal mealRevenue = BigDecimal.valueOf(meal.getPrice()).multiply(BigDecimal.valueOf(count));
             tomorrowRevenue = tomorrowRevenue.add(mealRevenue);
 
-            if ("LUNCH".equals(meal.getMealType())) {
+            if ("LUNCH".equals(meal.getMealType().name())) {
                 tomorrowLunch = count;
-            } else if ("DINNER".equals(meal.getMealType())) {
+            } else if ("DINNER".equals(meal.getMealType().name())) {
                 tomorrowDinner = count;
             }
 
             SalesSummaryResponse.MealConfigSummary config = new SalesSummaryResponse.MealConfigSummary();
             config.setMealId(meal.getId());
-            config.setMealType(meal.getMealType());
+            config.setMealType(meal.getMealType().name());
             config.setMenu(meal.getMenu());
-            config.setPrice(meal.getPrice());
-            config.setPurchaseDeadline(meal.getPurchaseDeadline().toString());
+            config.setPrice(BigDecimal.valueOf(meal.getPrice()));
+            config.setPurchaseDeadline(meal.getPurchaseDeadline() != null ? meal.getPurchaseDeadline().toString() : null);
             config.setTokensSold(count);
             configs.add(config);
         }
@@ -218,7 +221,7 @@ public class ReportService {
     private User getManager(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        if (!"MEAL_MANAGER".equals(user.getRole())) {
+        if (!"MEAL_MANAGER".equals(user.getRole().name())) {
             throw new IllegalStateException("User is not a Meal Manager");
         }
         return user;
