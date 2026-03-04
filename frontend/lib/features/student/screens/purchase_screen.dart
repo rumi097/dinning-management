@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/student_api_service.dart';
@@ -64,9 +65,21 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
+
+      // Extract meaningful error message
+      String errorMsg = 'Purchase failed';
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map) {
+          errorMsg = data['message']?.toString() ?? errorMsg;
+        }
+      } else {
+        errorMsg = 'Purchase failed: ${e.toString().replaceAll(RegExp(r'DioException.*?:'), '').trim()}';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Purchase failed: $e'),
+          content: Text(errorMsg),
           backgroundColor: Colors.red,
         ),
       );

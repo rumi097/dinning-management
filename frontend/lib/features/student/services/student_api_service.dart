@@ -67,14 +67,14 @@ class StudentApiService {
     return list.map((e) {
       final m = e as Map<String, dynamic>;
       final status = m['status']?.toString() ?? '';
-      final isValid = status == 'ACTIVE';
+      final isValid = status == 'AVAILABLE';
       return TokenModel(
         id: m['id'].toString(),
         tokenType: _capitalize(m['mealType']?.toString() ?? ''),
         date: m['mealDate']?.toString() ?? '',
         hall: '',
         time: '',
-        status: isValid ? 'Valid' : status,
+        status: isValid ? 'Available' : status,
         price: (m['price'] is num) ? (m['price'] as num).toInt() : 0,
         isValid: isValid,
       );
@@ -139,6 +139,64 @@ class StudentApiService {
             ? Icons.wb_sunny_outlined
             : Icons.nightlight_outlined,
         accentColor: mealType == 'Lunch' ? Colors.orange : Colors.deepPurple,
+      );
+    }).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // TRANSACTION HISTORY  (GET /students/history)
+  // ---------------------------------------------------------------------------
+
+  /// GET /students/history → aggregated transaction history
+  Future<List<TransactionData>> getTransactionHistory() async {
+    final res = await _client.get('/students/history');
+    final list = _unwrapList(res);
+    return list.map((e) {
+      final m = e as Map<String, dynamic>;
+      final type = m['type']?.toString() ?? '';
+      final amount = (m['amount'] is num) ? (m['amount'] as num).toInt() : 0;
+      final mealType = m['mealType']?.toString() ?? '';
+      final mealDate = m['mealDate']?.toString() ?? '';
+      final status = m['status']?.toString() ?? '';
+      final paymentMethod = m['paymentMethod']?.toString() ?? 'wallet';
+      final description = m['description']?.toString() ?? '';
+
+      // Determine tag for display
+      String tag;
+      switch (type) {
+        case 'PURCHASE':
+          tag = 'Purchase';
+          break;
+        case 'TOPUP':
+          tag = 'Top-up';
+          break;
+        case 'MARKETPLACE_SELL':
+          tag = 'Sold';
+          break;
+        case 'MARKETPLACE_BUY':
+          tag = 'Bought';
+          break;
+        case 'USED':
+          tag = 'Used';
+          break;
+        case 'REFUND':
+          tag = 'Refund';
+          break;
+        default:
+          tag = type;
+      }
+
+      return TransactionData(
+        status: status,
+        tokenType: mealType.isNotEmpty
+            ? '${mealType[0]}${mealType.substring(1).toLowerCase()} Token'
+            : description,
+        date: mealDate,
+        hall: '',
+        time: '',
+        amount: amount,
+        tag: tag,
+        paymentMethod: paymentMethod,
       );
     }).toList();
   }

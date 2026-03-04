@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/student_api_service.dart';
@@ -9,8 +10,9 @@ import '../services/student_api_service.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   final StudentApiService apiService;
+  final VoidCallback? onLogout;
 
-  const MarketplaceScreen({super.key, required this.apiService});
+  const MarketplaceScreen({super.key, required this.apiService, this.onLogout});
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -115,18 +117,29 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
 
   // --- Action methods (real API calls) ---
 
+  /// Extracts a human-readable message from a DioException or falls back to toString.
+  String _extractError(Object e) {
+    if (e is DioException && e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+    }
+    return e.toString();
+  }
+
   Future<void> sendBuyRequest(String postId, {required String paymentType}) async {
     try {
       await widget.apiService.sendBuyRequest(postId, paymentType: paymentType);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Buy request sent ($paymentType)')),
+        const SnackBar(content: Text('Buy request sent! Seller has 15 min to confirm.')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Buy request failed: $e'),
+          content: Text(_extractError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -183,7 +196,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
-                    sendBuyRequest(postId, paymentType: 'TRANSACTION');
+                    sendBuyRequest(postId, paymentType: 'TOPUP');
                   },
                 ),
                 const SizedBox(height: 8),
@@ -205,7 +218,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
-                    sendBuyRequest(postId, paymentType: 'TOPUP');
+                    sendBuyRequest(postId, paymentType: 'TRANSACTION');
                   },
                 ),
                 const SizedBox(height: 8),
@@ -222,13 +235,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       await widget.apiService.confirmListing(listingId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Listing $listingId confirmed')),
+        SnackBar(content: Text('Token transferred successfully')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Confirm failed: $e'),
+          content: Text(_extractError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -241,13 +254,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       await widget.apiService.rejectListing(listingId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Listing $listingId rejected')),
+        const SnackBar(content: Text('Buy request rejected')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Reject failed: $e'),
+          content: Text(_extractError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -266,7 +279,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cancel failed: $e'),
+          content: Text(_extractError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -279,13 +292,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       await widget.apiService.sellToken(tokenId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Token $tokenId listed for sale')),
+        const SnackBar(content: Text('Token listed for sale')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sell failed: $e'),
+          content: Text(_extractError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -304,6 +317,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Marketplace'),
+        actions: [
+          if (widget.onLogout != null)
+            IconButton(
+              onPressed: widget.onLogout,
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

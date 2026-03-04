@@ -74,8 +74,8 @@ public class TokenServiceImpl implements TokenService {
         Meal meal = mealRepository.findById(request.getMealId())
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found with ID: " + request.getMealId()));
 
-        // 2. Check purchase deadline
-        if (LocalDateTime.now().isAfter(meal.getPurchaseDeadline())) {
+        // 2. Check purchase deadline (skip if no deadline is set)
+        if (meal.getPurchaseDeadline() != null && LocalDateTime.now().isAfter(meal.getPurchaseDeadline())) {
             throw new IllegalStateException("Purchase deadline has passed for this meal.");
         }
 

@@ -1,12 +1,13 @@
-import 'dart:convert';import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/models.dart';
 import '../services/student_api_service.dart';
 
 class QrScreen extends StatefulWidget {
   final StudentApiService apiService;
+  final VoidCallback? onLogout;
 
-  const QrScreen({super.key, required this.apiService});
+  const QrScreen({super.key, required this.apiService, this.onLogout});
 
   @override
   State<QrScreen> createState() => _QrScreenState();
@@ -92,6 +93,14 @@ class _QrScreenState extends State<QrScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Tokens'),
+        actions: [
+          if (widget.onLogout != null)
+            IconButton(
+              onPressed: widget.onLogout,
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -242,20 +251,19 @@ class _QrScreenState extends State<QrScreen> {
                       child: Center(child: CircularProgressIndicator()),
                     )
                   : _qrBase64 != null && _qrBase64!.isNotEmpty
-                      ? Image.memory(
-                          base64Decode(_qrBase64!),
-                          width: 200,
-                          height: 200,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => QrImageView(
-                            data: token.tokenId,
-                            version: QrVersions.auto,
-                            size: 200,
-                            gapless: true,
-                          ),
+                      ? QrImageView(
+                          data: _qrBase64!,
+                          version: QrVersions.auto,
+                          size: 200,
+                          gapless: true,
+                          errorStateBuilder: (ctx, err) {
+                            return const Center(
+                              child: Text('Error generating QR'),
+                            );
+                          },
                         )
                       : QrImageView(
-                          data: token.tokenId,
+                          data: 'TOKEN:${token.tokenId}:fallback',
                           version: QrVersions.auto,
                           size: 200,
                           gapless: true,

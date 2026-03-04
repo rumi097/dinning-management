@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import '../services/meal_manager_service.dart';
 import '../widgets/meal_count_card.dart';
 import '../widgets/stat_card.dart';
@@ -53,6 +54,32 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   int _currentIndex = 0;
 
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ServiceLocator.tokenStorage.clearAll();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -85,6 +112,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             onPressed: _loadDashboard,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
+          ),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
           ),
         ],
       ),

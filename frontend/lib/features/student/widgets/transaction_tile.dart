@@ -10,8 +10,40 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isCredit = data.amount > 0;
-    final amountColor = isCredit ? Colors.green : Colors.red;
-    final tagColor = data.tag == 'Sold' ? Colors.green : Colors.blue;
+    final isZero = data.amount == 0;
+    final amountColor = isZero
+        ? Colors.grey
+        : isCredit
+            ? Colors.green
+            : Colors.red;
+
+    Color tagColor;
+    switch (data.tag) {
+      case 'Top-up':
+        tagColor = Colors.green;
+        break;
+      case 'Sold':
+        tagColor = Colors.teal;
+        break;
+      case 'Bought':
+        tagColor = Colors.orange;
+        break;
+      case 'Used':
+        tagColor = Colors.grey;
+        break;
+      case 'Refund':
+        tagColor = Colors.purple;
+        break;
+      default:
+        tagColor = Colors.blue;
+    }
+
+    // Build subtitle parts, skipping empty values
+    final subtitleParts = <String>[];
+    if (data.date.isNotEmpty) subtitleParts.add(data.date);
+    if (data.hall.isNotEmpty) subtitleParts.add(data.hall);
+    if (data.time.isNotEmpty) subtitleParts.add(data.time);
+    final subtitle = subtitleParts.isNotEmpty ? subtitleParts.join('  •  ') : '';
 
     return Card(
       elevation: 1,
@@ -70,12 +102,13 @@ class TransactionTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${data.date}  •  ${data.hall}  •  ${data.time}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -101,8 +134,9 @@ class TransactionTile extends StatelessWidget {
             const SizedBox(width: 10),
 
             // Amount
-            Text(
-              '${isCredit ? '+' : '-'} ৳${data.amount.abs()}',
+            if (!isZero)
+              Text(
+                '${isCredit ? '+' : '-'} ৳${data.amount.abs().toStringAsFixed(0)}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,

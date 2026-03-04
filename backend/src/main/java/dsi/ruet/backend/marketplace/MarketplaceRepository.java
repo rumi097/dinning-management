@@ -63,4 +63,14 @@ public interface MarketplaceRepository extends JpaRepository<MarketplacePost, Lo
     /** Get the active post for a specific token. */
     Optional<MarketplacePost> findFirstByTokenIdAndStatusIn(
             Long tokenId, List<MarketplacePostStatus> statuses);
+
+    /** Find all posts where user is seller or buyer, for transaction history. */
+    @Query("SELECT mp FROM MarketplacePost mp " +
+            "JOIN FETCH mp.token t " +
+            "JOIN FETCH t.meal m " +
+            "JOIN FETCH mp.seller " +
+            "LEFT JOIN FETCH mp.buyer " +
+            "WHERE mp.seller.id = :userId OR mp.buyer.id = :userId " +
+            "ORDER BY mp.createdAt DESC")
+    List<MarketplacePost> findBySellerIdOrBuyerId(@Param("userId") Long userId);
 }

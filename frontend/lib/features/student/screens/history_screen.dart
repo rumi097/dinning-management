@@ -5,8 +5,9 @@ import '../widgets/transaction_tile.dart';
 
 class HistoryScreen extends StatefulWidget {
   final StudentApiService apiService;
+  final VoidCallback? onLogout;
 
-  const HistoryScreen({super.key, required this.apiService});
+  const HistoryScreen({super.key, required this.apiService, this.onLogout});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -30,23 +31,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     try {
-      // No dedicated transaction endpoint — derive history from owned tokens
-      final tokens = await widget.apiService.getMyTokens();
+      final transactions = await widget.apiService.getTransactionHistory();
       if (!mounted) return;
       setState(() {
-        _transactions = tokens.map((t) {
-          final isUsed = t.status == 'Used' || !t.isValid;
-          return TransactionData(
-            status: isUsed ? 'Used' : 'Purchased',
-            tokenType: '${t.tokenType} Token',
-            date: t.date,
-            hall: t.hall.isNotEmpty ? t.hall : '-',
-            time: t.time.isNotEmpty ? t.time : '-',
-            amount: -t.price,
-            tag: isUsed ? 'Used' : 'Purchased',
-            paymentMethod: 'wallet',
-          );
-        }).toList();
+        _transactions = transactions;
         _isLoading = false;
       });
     } catch (e) {
@@ -65,6 +53,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaction History'),
+        actions: [
+          if (widget.onLogout != null)
+            IconButton(
+              onPressed: widget.onLogout,
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

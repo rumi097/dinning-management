@@ -243,6 +243,11 @@ class _DiningManagerHomeState extends State<DiningManagerHome> {
 
         const SizedBox(height: 20),
 
+        // ── Remaining Students Summary ──
+        _buildRemainingCard(theme),
+
+        const SizedBox(height: 20),
+
         // Meal stats cards
         if (_stats.isEmpty)
           Card(
@@ -276,6 +281,123 @@ class _DiningManagerHomeState extends State<DiningManagerHome> {
               child: MealStatsCard(stats: s),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildRemainingCard(ThemeData theme) {
+    final totalRemaining =
+        _stats.fold<int>(0, (sum, s) => sum + s.remainingTokens);
+    final totalTokens =
+        _stats.fold<int>(0, (sum, s) => sum + s.totalTokens);
+    final totalServed =
+        _stats.fold<int>(0, (sum, s) => sum + s.usedTokens);
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 36,
+              color: totalRemaining > 0
+                  ? Colors.deepOrange
+                  : Colors.green,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Students Remaining',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              totalRemaining.toString(),
+              style: theme.textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: totalRemaining > 0
+                    ? Colors.deepOrange
+                    : Colors.green,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _summaryChip(
+                  icon: Icons.confirmation_number_outlined,
+                  label: 'Total',
+                  value: totalTokens.toString(),
+                  color: theme.colorScheme.primary,
+                ),
+                _summaryChip(
+                  icon: Icons.check_circle_outline,
+                  label: 'Served',
+                  value: totalServed.toString(),
+                  color: Colors.green,
+                ),
+                _summaryChip(
+                  icon: Icons.pending_outlined,
+                  label: 'Remaining',
+                  value: totalRemaining.toString(),
+                  color: Colors.deepOrange,
+                ),
+              ],
+            ),
+            if (totalTokens > 0) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: totalServed / totalTokens,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    totalRemaining == 0 ? Colors.green : Colors.deepOrange,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${((totalServed / totalTokens) * 100).toStringAsFixed(0)}% served',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
       ],
     );
   }

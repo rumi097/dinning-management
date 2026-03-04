@@ -1,6 +1,7 @@
 package dsi.ruet.backend.exception;
 
 import dsi.ruet.backend.dto.ErrorResponse;
+import dsi.ruet.backend.marketplace.exception.MarketplaceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -57,8 +58,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(
             IllegalStateException ex, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -66,6 +67,13 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse("Access denied: insufficient permissions", HttpStatus.FORBIDDEN.value());
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(MarketplaceException.class)
+    public ResponseEntity<ErrorResponse> handleMarketplaceException(
+            MarketplaceException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

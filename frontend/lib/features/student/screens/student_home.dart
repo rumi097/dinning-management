@@ -25,11 +25,37 @@ class _StudentHomeState extends State<StudentHome> {
     super.initState();
     _apiService = StudentApiService.withClient(ServiceLocator.apiClient);
     _screens = [
-      DashboardScreen(apiService: _apiService),
-      QrScreen(apiService: _apiService),
-      MarketplaceScreen(apiService: _apiService),
-      HistoryScreen(apiService: _apiService),
+      DashboardScreen(apiService: _apiService, onLogout: _logout),
+      QrScreen(apiService: _apiService, onLogout: _logout),
+      MarketplaceScreen(apiService: _apiService, onLogout: _logout),
+      HistoryScreen(apiService: _apiService, onLogout: _logout),
     ];
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ServiceLocator.tokenStorage.clearAll();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+      }
+    }
   }
 
   @override
