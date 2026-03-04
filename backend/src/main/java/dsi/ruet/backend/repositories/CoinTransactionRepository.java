@@ -66,6 +66,9 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 
+    /** All REFUND transactions linked to a specific meal */
+    List<CoinTransaction> findByMealIdAndType(Long mealId, TransactionType type);
+
     // ===== Report-service queries =====
 
     @Query("SELECT ct FROM CoinTransaction ct WHERE ct.type = dsi.ruet.backend.models.enums.TransactionType.TOPUP " +

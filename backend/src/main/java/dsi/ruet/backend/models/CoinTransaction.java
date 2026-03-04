@@ -33,6 +33,11 @@ public class CoinTransaction {
     @Column(nullable = false)
     private TransactionType type;
 
+    // Optional link to the meal this transaction is for (used for REFUND transactions)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "meal_id")
+    private Meal meal;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

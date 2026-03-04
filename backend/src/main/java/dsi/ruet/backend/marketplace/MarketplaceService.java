@@ -222,7 +222,7 @@ public class MarketplaceService {
 
         // === ATOMIC TRANSFER ===
         User seller = post.getSeller();
-        BigDecimal mealPrice = token.getMeal().getPrice();
+        Long mealPrice = token.getMeal().getPrice().longValue();
 
         // Credit transfer only for TRANSACTION payment type
         // TOPUP means payment is handled outside the app — no wallet changes
@@ -230,7 +230,7 @@ public class MarketplaceService {
             // 1. Deduct from buyer's wallet
             Wallet buyerWallet = walletRepository.findById(buyer.getId())
                     .orElseThrow(() -> new MarketplaceException("Buyer wallet not found"));
-            if (buyerWallet.getBalance().compareTo(mealPrice) < 0) {
+            if (buyerWallet.getBalance().compareTo(BigDecimal.valueOf(mealPrice)) < 0) {
                 throw new MarketplaceException("Buyer has insufficient balance. Required: " + mealPrice);
             }
             buyerWallet.deduct(mealPrice);
@@ -246,7 +246,7 @@ public class MarketplaceService {
             CoinTransaction coinTx = CoinTransaction.builder()
                     .sender(buyer)
                     .receiver(seller)
-                    .amount(mealPrice.longValue())
+                    .amount(mealPrice)
                     .type(TransactionType.TRANSACTION)
                     .build();
             coinTransactionRepository.save(coinTx);
@@ -475,9 +475,20 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public List<TokenResponse> getMyAvailableTokens(Long userId) {
         findUserOrThrow(userId); // validate user exists
-        return tokenRepository.findByOwnerIdAndStatus(userId, TokenStatus.AVAILABLE)
+        return tokenRepository.findByOwnerId(userId)
                 .stream()
-                .map(this::toTokenResponse)
+                .filter(t -> t.getStatus() != TokenStatus.CANCELLED)
+                .map(t -> {
+                    TokenResponse resp = toTokenResponse(t);
+                    // If token is LISTED, find its marketplace post and attach listingId
+                    if (t.getStatus() == TokenStatus.LISTED) {
+                        List<MarketplacePostStatus> activeStatuses =
+                                Arrays.asList(MarketplacePostStatus.OPEN, MarketplacePostStatus.PENDING);
+                        marketplaceRepository.findFirstByTokenIdAndStatusIn(t.getId(), activeStatuses)
+                                .ifPresent(post -> resp.setListingId(post.getId()));
+                    }
+                    return resp;
+                })
                 .collect(Collectors.toList());
     }
 

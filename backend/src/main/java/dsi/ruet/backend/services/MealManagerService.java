@@ -307,13 +307,16 @@ public class MealManagerService {
 
         for (Meal meal : meals) {
             boolean shouldClose = false;
+            boolean shouldReopen = false;
 
-            // Check if this meal type should be closed
-            if (meal.getMealType() == MealType.LUNCH && !request.isLunchAvailable()) {
-                shouldClose = true;
+            // Check if this meal type should be closed or reopened
+            if (meal.getMealType() == MealType.LUNCH) {
+                shouldClose = !request.isLunchAvailable();
+                shouldReopen = request.isLunchAvailable() && Boolean.TRUE.equals(meal.getIsClosed());
             }
-            if (meal.getMealType() == MealType.DINNER && !request.isDinnerAvailable()) {
-                shouldClose = true;
+            if (meal.getMealType() == MealType.DINNER) {
+                shouldClose = !request.isDinnerAvailable();
+                shouldReopen = request.isDinnerAvailable() && Boolean.TRUE.equals(meal.getIsClosed());
             }
 
             // Close and refund if not already closed
@@ -322,6 +325,14 @@ public class MealManagerService {
                 totalRefunds += refunds;
                 // Mark as refunded so it won't appear in pending refunds
                 meal.setRefundedAt(LocalDateTime.now());
+                mealRepository.save(meal);
+            }
+
+            // Reopen if was closed and now toggled back on
+            if (shouldReopen) {
+                meal.setIsClosed(false);
+                meal.setRefundedAt(null);
+                meal.setRefundCount(null);
                 mealRepository.save(meal);
             }
         }
@@ -832,6 +843,11 @@ public class MealManagerService {
 
     /** Record a coin transaction between two users */
     private void recordCoinTransaction(User sender, User receiver, BigDecimal amount, String typeStr) {
+        recordCoinTransaction(sender, receiver, amount, typeStr, null);
+    }
+
+    /** Record a coin transaction between two users, optionally linked to a meal */
+    private void recordCoinTransaction(User sender, User receiver, BigDecimal amount, String typeStr, Meal meal) {
         CoinTransaction tx = new CoinTransaction();
         tx.setSender(sender);
         tx.setReceiver(receiver);
@@ -844,6 +860,7 @@ public class MealManagerService {
             default -> txType = TransactionType.TRANSACTION;
         }
         tx.setType(txType);
+        tx.setMeal(meal);
         tx.setCreatedAt(LocalDateTime.now());
         coinTransactionRepository.save(tx);
     }

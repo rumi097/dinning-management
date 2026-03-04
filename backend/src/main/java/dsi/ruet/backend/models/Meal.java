@@ -57,4 +57,8 @@ public class Meal {
     // Timestamp when refunds were processed for this meal (null = not yet refunded)
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
+
+    // Number of tokens that were refunded when meal was closed (persists after token deletion)
+    @Column(name = "refund_count")
+    private Integer refundCount;
 }

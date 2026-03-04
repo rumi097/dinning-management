@@ -230,6 +230,25 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     );
   }
 
+  Future<void> cancelListing(String listingId) async {
+    try {
+      await widget.apiService.cancelSellRequest(listingId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Listing cancelled. Token returned to your account.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_extractError(e)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    await _loadData();
+  }
+
   Future<void> confirmListing(String listingId) async {
     try {
       await widget.apiService.confirmListing(listingId);
@@ -1011,6 +1030,27 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 ),
               ],
             ),
+
+            // Open → cancel listing button
+            if (listing.status == 'OPEN') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => cancelListing(listing.listingId),
+                  icon: const Icon(Icons.cancel_outlined, size: 18),
+                  label: const Text('Cancel Listing'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
 
             // Pending → timer + confirm/reject
             if (listing.status == 'PENDING') ...[

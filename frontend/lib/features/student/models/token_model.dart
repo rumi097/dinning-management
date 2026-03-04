@@ -219,6 +219,7 @@ class MyToken {
   final String date;
   final int price;
   final String status; // 'AVAILABLE' | 'LISTED' | 'USED'
+  final String? listingId; // marketplace post ID (for LISTED tokens)
 
   const MyToken({
     required this.tokenId,
@@ -226,6 +227,7 @@ class MyToken {
     required this.date,
     required this.price,
     required this.status,
+    this.listingId,
   });
 
   factory MyToken.fromJson(Map<String, dynamic> json) => MyToken(
@@ -234,6 +236,7 @@ class MyToken {
         date: json['date'] as String,
         price: json['price'] as int,
         status: json['status'] as String,
+        listingId: json['listingId']?.toString(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -242,6 +245,7 @@ class MyToken {
         'date': date,
         'price': price,
         'status': status,
+        'listingId': listingId,
       };
 
   /// Parsed status enum.
@@ -256,6 +260,7 @@ class MyToken {
     String? date,
     int? price,
     String? status,
+    String? listingId,
   }) =>
       MyToken(
         tokenId: tokenId ?? this.tokenId,
@@ -263,6 +268,7 @@ class MyToken {
         date: date ?? this.date,
         price: price ?? this.price,
         status: status ?? this.status,
+        listingId: listingId ?? this.listingId,
       );
 
   @override

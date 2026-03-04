@@ -244,6 +244,7 @@ class StudentApiService {
         date: m['mealDate']?.toString() ?? '',
         price: (m['price'] is num) ? (m['price'] as num).toInt() : 0,
         status: m['status']?.toString() ?? 'AVAILABLE',
+        listingId: m['listingId']?.toString(),
       );
     }).toList();
   }

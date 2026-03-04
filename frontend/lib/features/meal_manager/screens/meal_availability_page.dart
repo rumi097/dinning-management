@@ -118,8 +118,13 @@ class _MealAvailabilityPageState extends State<MealAvailabilityPage> {
       final success =
           await _service.updateMealAvailability(_availability!);
       if (mounted) {
+        final closedAny = !_availability!.isLunchAvailable || !_availability!.isDinnerAvailable;
         _showSnackBar(
-          success ? 'Availability updated! Tokens have been refunded.' : 'Failed to update.',
+          success
+              ? (closedAny
+                  ? 'Availability updated! Tokens have been refunded.'
+                  : 'Meal availability updated successfully!')
+              : 'Failed to update.',
           isSuccess: success,
         );
          // Reload to reflect actual state from backend

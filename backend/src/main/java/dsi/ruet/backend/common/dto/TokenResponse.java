@@ -14,4 +14,5 @@ public class TokenResponse {
     private String menu;
     private Long price;
     private String status;
+    private Long listingId;
 }
