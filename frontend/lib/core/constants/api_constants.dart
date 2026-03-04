@@ -1,12 +1,23 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  // Base URL — configured at build time via --dart-define=BASE_URL=...
-  // Defaults to localhost for development.
-  // Production example:
-  //   flutter build apk --dart-define=BASE_URL=https://your-server.com/api/v1
-  static const String baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://localhost:8080/api/v1',
-  );
+  // Base URL — can be overridden at build time via:
+  //   --dart-define=BASE_URL=https://your-server.com/api/v1
+  //
+  // If not overridden:
+  // - Debug/Profile: localhost (for local development)
+  // - Release: Render production backend
+  static const String _buildTimeBaseUrl = String.fromEnvironment('BASE_URL');
+
+  static String get baseUrl {
+    if (_buildTimeBaseUrl.isNotEmpty) {
+      return _buildTimeBaseUrl;
+    }
+
+    return kReleaseMode
+        ? 'https://dsi-backend-gy8s.onrender.com/api/v1'
+        : 'http://localhost:8080/api/v1';
+  }
 
   // Auth endpoints
   static const String loginEndpoint = '/auth/login';

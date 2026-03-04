@@ -23,8 +23,10 @@ import java.util.List;
 
 /**
  * Spring Security configuration.
- * Note: This application runs under the servlet context path `/api/v1`.
- * Request matchers must include that prefix.
+ *
+ * Important: This application runs under the servlet context path `/api/v1`.
+ * Spring Security request matchers operate on the path *within* that context
+ * path, so matchers should NOT include `/api/v1`.
  */
 @Configuration
 @EnableWebSecurity
@@ -53,20 +55,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                 // ---- Public endpoints (no JWT required) ----
                 .requestMatchers(
-                    "/api/v1/health",
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/signup",
-                    "/api/v1/auth/send-otp",
-                    "/api/v1/auth/verify-otp",
-                    "/api/v1/auth/reset-password",
-                    "/api/v1/admin/login"
+                        "/health",
+                        "/auth/login",
+                        "/auth/signup",
+                        "/auth/send-otp",
+                        "/auth/verify-otp",
+                        "/auth/reset-password",
+                        "/admin/login"
                 ).permitAll()
 
                 // ---- Admin endpoints ----
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
 
                 // ---- Student marketplace ----
-                .requestMatchers("/api/v1/marketplace/**").hasRole("STUDENT")
+                    .requestMatchers("/marketplace/**").hasRole("STUDENT")
 
                 // Everything else requires authentication. Fine-grained role checks
                 // are enforced at the controller/service level via @PreAuthorize.
