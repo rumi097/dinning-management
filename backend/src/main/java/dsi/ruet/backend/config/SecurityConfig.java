@@ -23,10 +23,8 @@ import java.util.List;
 
 /**
  * Spring Security configuration.
- * - Public endpoints: /auth/signup, /auth/login
- * - Admin endpoints: /admin/** (permitAll for now)
- * - Meal Manager endpoints: /api/v1/** (requires MEAL_MANAGER role)
- * - Everything else: requires authentication
+ * Note: This application runs under the servlet context path `/api/v1`.
+ * Request matchers must include that prefix.
  */
 @Configuration
 @EnableWebSecurity
@@ -53,15 +51,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/auth/signup", "/auth/login","/auth/send-otp","/auth/verify-otp","/auth/reset-password").permitAll()
-                        .requestMatchers("/admin/login").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/tokens/**").authenticated()
-                        .requestMatchers("/marketplace/**").authenticated()
-                        .requestMatchers("/students/**").authenticated()
-                        // Meal manager APIs under /api/v1
-                        .requestMatchers("/api/v1/**").hasRole("MEAL_MANAGER")
-                        .requestMatchers("/auth/**").authenticated()
+                // ---- Public endpoints (no JWT required) ----
+                .requestMatchers(
+                    "/api/v1/health",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/signup",
+                    "/api/v1/auth/send-otp",
+                    "/api/v1/auth/verify-otp",
+                    "/api/v1/auth/reset-password",
+                    "/api/v1/admin/login"
+                ).permitAll()
+
+                // ---- Admin endpoints ----
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                // ---- Student marketplace ----
+                .requestMatchers("/api/v1/marketplace/**").hasRole("STUDENT")
+
+                // Everything else requires authentication. Fine-grained role checks
+                // are enforced at the controller/service level via @PreAuthorize.
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

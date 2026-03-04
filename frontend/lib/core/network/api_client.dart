@@ -150,6 +150,8 @@ class ApiClient {
     switch (type) {
       case DioExceptionType.connectionTimeout:
         return 'Connection timeout. Please check your internet connection.';
+      case DioExceptionType.connectionError:
+        return 'Could not connect to the server (${ApiConstants.baseUrl}). Please check the server URL and your internet connection.';
       case DioExceptionType.sendTimeout:
         return 'Send timeout. Please check your internet connection.';
       case DioExceptionType.receiveTimeout:
@@ -162,8 +164,6 @@ class ApiClient {
         return 'An unexpected error occurred.';
       case DioExceptionType.badCertificate:
         return 'Bad certificate error.';
-      default:
-        return 'An unexpected error occurred.';
     }
   }
 }
