@@ -256,6 +256,7 @@ public class MealManagerService {
     /**
      * GET /api/v1/meals/availability/{date}
      * Returns whether lunch/dinner are available (not closed) on the given date.
+     * Defaults to available (true) unless explicitly closed.
      */
     public ApiResponse<MealAvailabilityResponse> getMealAvailability(String dateStr, Long managerId) {
         User manager = findUserById(managerId);
@@ -263,6 +264,7 @@ public class MealManagerService {
 
         List<Meal> meals = mealRepository.findByHallIdAndMealDate(manager.getHall().getId(), date);
 
+        // Default to available — only mark unavailable if explicitly closed
         boolean lunchAvailable = true;
         boolean dinnerAvailable = true;
 
@@ -274,12 +276,6 @@ public class MealManagerService {
                 dinnerAvailable = false;
             }
         }
-
-        // If no config exists for a meal type, it's "not available"
-        boolean hasLunch = meals.stream().anyMatch(m -> m.getMealType() == MealType.LUNCH);
-        boolean hasDinner = meals.stream().anyMatch(m -> m.getMealType() == MealType.DINNER);
-        if (!hasLunch) lunchAvailable = false;
-        if (!hasDinner) dinnerAvailable = false;
 
         boolean anyAvailable = lunchAvailable || dinnerAvailable;
 
@@ -321,6 +317,9 @@ public class MealManagerService {
             if (shouldClose && !Boolean.TRUE.equals(meal.getIsClosed())) {
                 int refunds = closeMealAndRefund(meal, manager);
                 totalRefunds += refunds;
+                // Mark as refunded so it won't appear in pending refunds
+                meal.setRefundedAt(LocalDateTime.now());
+                mealRepository.save(meal);
             }
         }
 
@@ -382,6 +381,98 @@ public class MealManagerService {
 
         RevenueReportResponse resp = new RevenueReportResponse(lunchRevenue, dinnerRevenue);
         return new ApiResponse<>("Revenue report for " + dateStr, resp);
+    }
+
+    /**
+     * GET /api/v1/reports/revenue-overview?period=daily|weekly|monthly&year=2026&month=3
+     * Returns revenue overview with daily breakdown for the specified period.
+     */
+    public ApiResponse<RevenueOverviewResponse> getRevenueOverview(
+            String period, int year, int month, Long managerId) {
+        User manager = findUserById(managerId);
+        Long hallId = manager.getHall().getId();
+
+        LocalDate startDate;
+        LocalDate endDate;
+
+        switch (period.toLowerCase()) {
+            case "weekly" -> {
+                // Current week (Monday to Sunday)
+                LocalDate today = LocalDate.now();
+                startDate = today.with(java.time.DayOfWeek.MONDAY);
+                endDate = today.with(java.time.DayOfWeek.SUNDAY);
+            }
+            case "monthly" -> {
+                startDate = LocalDate.of(year, month, 1);
+                endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+            }
+            default -> {
+                // daily = today only
+                startDate = LocalDate.now();
+                endDate = startDate;
+            }
+        }
+
+        List<Meal> meals = mealRepository.findByHallIdAndMealDateBetweenOrderByMealDateDesc(
+                hallId, startDate, endDate);
+
+        // Group by date
+        Map<LocalDate, List<Meal>> mealsByDate = meals.stream()
+                .collect(Collectors.groupingBy(Meal::getMealDate,
+                        LinkedHashMap::new, Collectors.toList()));
+
+        List<RevenueOverviewResponse.DailyRevenue> dailyBreakdown = new ArrayList<>();
+        double totalLunchRevenue = 0;
+        double totalDinnerRevenue = 0;
+        int totalLunchSold = 0;
+        int totalDinnerSold = 0;
+
+        // Iterate through all dates in range (including dates with no meals)
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+            List<Meal> dayMeals = mealsByDate.getOrDefault(d, List.of());
+
+            int lunchSold = 0;
+            int dinnerSold = 0;
+            double lunchRev = 0;
+            double dinnerRev = 0;
+
+            for (Meal meal : dayMeals) {
+                long count = tokenRepository.countByMealId(meal.getId());
+                double rev = meal.getPrice().multiply(java.math.BigDecimal.valueOf(count)).doubleValue();
+                if (meal.getMealType() == MealType.LUNCH) {
+                    lunchSold = (int) count;
+                    lunchRev = rev;
+                } else if (meal.getMealType() == MealType.DINNER) {
+                    dinnerSold = (int) count;
+                    dinnerRev = rev;
+                }
+            }
+
+            totalLunchSold += lunchSold;
+            totalDinnerSold += dinnerSold;
+            totalLunchRevenue += lunchRev;
+            totalDinnerRevenue += dinnerRev;
+
+            String displayDate = d.format(DateTimeFormatter.ofPattern("EEE, MMM d"));
+
+            dailyBreakdown.add(new RevenueOverviewResponse.DailyRevenue(
+                    d.format(DATE_FMT), displayDate,
+                    lunchSold, dinnerSold,
+                    lunchRev, dinnerRev,
+                    lunchRev + dinnerRev));
+        }
+
+        // Sort by date ascending
+        dailyBreakdown.sort(Comparator.comparing(RevenueOverviewResponse.DailyRevenue::getDate));
+
+        RevenueOverviewResponse resp = new RevenueOverviewResponse(
+                period,
+                totalLunchRevenue + totalDinnerRevenue,
+                totalLunchRevenue, totalDinnerRevenue,
+                totalLunchSold + totalDinnerSold,
+                totalLunchSold, totalDinnerSold,
+                dailyBreakdown);
+        return new ApiResponse<>("Revenue overview (" + period + ")", resp);
     }
 
     /**
@@ -742,7 +833,14 @@ public class MealManagerService {
         tx.setSender(sender);
         tx.setReceiver(receiver);
         tx.setAmount(amount.longValue());
-        tx.setType("TOPUP".equalsIgnoreCase(typeStr) ? TransactionType.TOPUP : TransactionType.TRANSACTION);
+        TransactionType txType;
+        switch (typeStr.toUpperCase()) {
+            case "TOPUP" -> txType = TransactionType.TOPUP;
+            case "REFUND" -> txType = TransactionType.REFUND;
+            case "PURCHASE" -> txType = TransactionType.PURCHASE;
+            default -> txType = TransactionType.TRANSACTION;
+        }
+        tx.setType(txType);
         tx.setCreatedAt(LocalDateTime.now());
         coinTransactionRepository.save(tx);
     }

@@ -180,6 +180,24 @@ public class MealManagerController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * GET /api/v1/reports/revenue-overview?period=daily|weekly|monthly&year=2026&month=3
+     * Get revenue overview with daily breakdown for the specified period.
+     */
+    @GetMapping("/reports/revenue-overview")
+    public ResponseEntity<ApiResponse<RevenueOverviewResponse>> getRevenueOverview(
+            @RequestParam(defaultValue = "daily") String period,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            Authentication authentication) {
+
+        Long managerId = getAuthenticatedUserId(authentication);
+        int y = year != null ? year : java.time.LocalDate.now().getYear();
+        int m = month != null ? month : java.time.LocalDate.now().getMonthValue();
+        ApiResponse<RevenueOverviewResponse> response = mealManagerService.getRevenueOverview(period, y, m, managerId);
+        return ResponseEntity.ok(response);
+    }
+
     // ==================== HISTORY ====================
 
     /**

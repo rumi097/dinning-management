@@ -58,7 +58,7 @@ public interface CoinTransactionRepository extends JpaRepository<CoinTransaction
 
     /** All REFUND transactions by a manager within a date range */
     @Query("SELECT ct FROM CoinTransaction ct " +
-           "WHERE ct.sender.id = :senderId AND ct.type = dsi.ruet.backend.models.enums.TransactionType.TRANSACTION " +
+           "WHERE ct.sender.id = :senderId AND ct.type = dsi.ruet.backend.models.enums.TransactionType.REFUND " +
            "AND ct.createdAt >= :start AND ct.createdAt < :end " +
            "ORDER BY ct.createdAt DESC")
     List<CoinTransaction> findRefundsBySenderAndDateRange(

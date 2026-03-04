@@ -51,6 +51,9 @@ class _SetMenuPageState extends State<SetMenuPage>
       final configs = await _service.getTomorrowConfig();
       _configs = configs;
 
+      bool hasLunchMenu = false;
+      bool hasDinnerMenu = false;
+
       for (final c in configs) {
         final items = c.menu
             .split(',')
@@ -61,10 +64,40 @@ class _SetMenuPageState extends State<SetMenuPage>
           _lunchItems
             ..clear()
             ..addAll(items);
+          if (items.isNotEmpty) hasLunchMenu = true;
         } else {
           _dinnerItems
             ..clear()
             ..addAll(items);
+          if (items.isNotEmpty) hasDinnerMenu = true;
+        }
+      }
+
+      // If no menu set for tomorrow, default to today's menu
+      if (!hasLunchMenu || !hasDinnerMenu) {
+        final today = DateTime.now();
+        final todayStr =
+            '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+        try {
+          final todayConfigs = await _service.getMealConfigByDate(todayStr);
+          for (final c in todayConfigs) {
+            final items = c.menu
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList();
+            if (c.mealType == MealType.lunch && !hasLunchMenu && items.isNotEmpty) {
+              _lunchItems
+                ..clear()
+                ..addAll(items);
+            } else if (c.mealType == MealType.dinner && !hasDinnerMenu && items.isNotEmpty) {
+              _dinnerItems
+                ..clear()
+                ..addAll(items);
+            }
+          }
+        } catch (_) {
+          // Ignore if today's config doesn't exist
         }
       }
     } catch (_) {}
@@ -96,7 +129,7 @@ class _SetMenuPageState extends State<SetMenuPage>
         orElse: () => MealConfig(
             date: dateStr,
             mealType: MealType.lunch,
-            price: 55.0,
+            price: 0,
             menu: ''),
       );
       final dinnerConfig = _configs.firstWhere(
@@ -104,7 +137,7 @@ class _SetMenuPageState extends State<SetMenuPage>
         orElse: () => MealConfig(
             date: dateStr,
             mealType: MealType.dinner,
-            price: 65.0,
+            price: 0,
             menu: ''),
       );
 

@@ -82,10 +82,13 @@ public class StudentController {
             map.put("mealDate", m.getMealDate().toString());
             map.put("menu", m.getMenu());
             map.put("price", m.getPrice());
-            map.put("purchaseDeadline", m.getPurchaseDeadline() != null ? m.getPurchaseDeadline().toString() : null);
+            // Use purchaseEndTime as the effective deadline (meal manager saves deadline there)
+            LocalDateTime deadline = m.getPurchaseEndTime() != null ? m.getPurchaseEndTime() :
+                                     m.getPurchaseDeadline();
+            map.put("purchaseDeadline", deadline != null ? deadline.toString() : null);
             map.put("isClosed", m.getIsClosed());
             map.put("canPurchase", !m.getIsClosed() &&
-                    (m.getPurchaseDeadline() == null || LocalDateTime.now().isBefore(m.getPurchaseDeadline())));
+                    (deadline == null || LocalDateTime.now().isBefore(deadline)));
             return map;
         }).collect(Collectors.toList());
 
@@ -111,7 +114,12 @@ public class StudentController {
         LocalDateTime now = LocalDateTime.now();
         List<Map<String, Object>> result = meals.stream()
                 .filter(m -> !m.getIsClosed())
-                .filter(m -> m.getPurchaseDeadline() == null || now.isBefore(m.getPurchaseDeadline()))
+                .filter(m -> {
+                    // Use purchaseEndTime as the effective deadline
+                    LocalDateTime deadline = m.getPurchaseEndTime() != null ? m.getPurchaseEndTime() :
+                                             m.getPurchaseDeadline();
+                    return deadline == null || now.isBefore(deadline);
+                })
                 .map(m -> {
                     Map<String, Object> map = new LinkedHashMap<>();
                     map.put("mealId", m.getId());
@@ -119,7 +127,9 @@ public class StudentController {
                     map.put("mealDate", m.getMealDate().toString());
                     map.put("menu", m.getMenu());
                     map.put("price", m.getPrice());
-                    map.put("purchaseDeadline", m.getPurchaseDeadline() != null ? m.getPurchaseDeadline().toString() : null);
+                    LocalDateTime deadline = m.getPurchaseEndTime() != null ? m.getPurchaseEndTime() :
+                                             m.getPurchaseDeadline();
+                    map.put("purchaseDeadline", deadline != null ? deadline.toString() : null);
                     return map;
                 }).collect(Collectors.toList());
 

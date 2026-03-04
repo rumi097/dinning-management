@@ -78,15 +78,52 @@ class _MealAvailabilityPageState extends State<MealAvailabilityPage> {
 
   Future<void> _save() async {
     if (_availability == null) return;
+
+    // If setting any meal to unavailable, show confirmation with refund warning
+    final closingLunch = !_availability!.isLunchAvailable;
+    final closingDinner = !_availability!.isDinnerAvailable;
+    if (closingLunch || closingDinner) {
+      final meals = [
+        if (closingLunch) 'Lunch',
+        if (closingDinner) 'Dinner',
+      ].join(' & ');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 36),
+          title: const Text('Confirm Close Meal'),
+          content: Text(
+            'Closing $meals will automatically refund all purchased tokens '
+            'back to students\' wallets and delete those tokens.\n\n'
+            'This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Close & Refund'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     setState(() => _saving = true);
     try {
       final success =
           await _service.updateMealAvailability(_availability!);
       if (mounted) {
         _showSnackBar(
-          success ? 'Availability updated!' : 'Failed to update.',
+          success ? 'Availability updated! Tokens have been refunded.' : 'Failed to update.',
           isSuccess: success,
         );
+         // Reload to reflect actual state from backend
+        if (success) _loadAvailability();
       }
     } catch (e) {
       if (mounted) _showSnackBar('Error: $e');

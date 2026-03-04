@@ -6,6 +6,7 @@ import '../models/meal_availability.dart';
 import '../models/meal_config.dart';
 import '../models/meal_history.dart';
 import '../models/credit_transaction.dart';
+import '../models/revenue_overview.dart';
 
 /// Service layer for all Meal Manager API calls.
 ///
@@ -484,6 +485,38 @@ class MealManagerService {
       if (config.purchaseDeadline != null)
         'purchaseEndTime': '${config.date}T${config.purchaseDeadline}:00',
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Revenue Overview
+  // ---------------------------------------------------------------------------
+
+  /// GET /reports/revenue-overview?period=daily|weekly|monthly&year=YYYY&month=MM
+  Future<RevenueOverview> getRevenueOverview({
+    String period = 'daily',
+    int? year,
+    int? month,
+  }) async {
+    try {
+      final now = DateTime.now();
+      final params = <String, dynamic>{
+        'period': period,
+        'year': year ?? now.year,
+        'month': month ?? now.month,
+      };
+      final response = await _apiClient.get(
+        '/reports/revenue-overview',
+        queryParameters: params,
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        return RevenueOverview.fromJson(body['data'] as Map<String, dynamic>);
+      }
+      return const RevenueOverview();
+    } catch (e) {
+      debugPrint('GetRevenueOverview error: $e');
+      return const RevenueOverview();
+    }
   }
 }
 

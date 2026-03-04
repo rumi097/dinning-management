@@ -1,5 +1,6 @@
 package dsi.ruet.backend.dto.mealmanager;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,11 @@ public class DashboardResponse {
     private double dinnerRevenue;    // dinnerCount * dinnerPrice
     private int totalStudents;       // total students in this hall
     private int todayTopUps;         // number of top-up transactions today
+
+    @JsonProperty("isLunchAvailable")
     private boolean isLunchAvailable;
+
+    @JsonProperty("isDinnerAvailable")
     private boolean isDinnerAvailable;
 
     /** Computed field: total meals sold */

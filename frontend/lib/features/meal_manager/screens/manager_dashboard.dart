@@ -10,6 +10,7 @@ import 'set_price_page.dart';
 import 'set_menu_page.dart';
 import 'meal_availability_page.dart';
 import 'history_page.dart';
+import 'revenue_overview_page.dart';
 
 /// The main dashboard for the Meal Manager role.
 ///
@@ -226,13 +227,16 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           // ── Section: Revenue Overview ──
           _sectionHeader(theme, 'Revenue Overview'),
           const SizedBox(height: 8),
-          StatCard(
-            title: 'Total Revenue',
-            value: '৳${data.totalRevenue.toStringAsFixed(0)}',
-            icon: Icons.account_balance_wallet,
-            color: Colors.green,
-            subtitle:
-                'Lunch ৳${data.lunchRevenue.toStringAsFixed(0)} · Dinner ৳${data.dinnerRevenue.toStringAsFixed(0)}',
+          GestureDetector(
+            onTap: () => _goTo(const RevenueOverviewPage()),
+            child: StatCard(
+              title: 'Total Revenue',
+              value: '৳${data.totalRevenue.toStringAsFixed(0)}',
+              icon: Icons.account_balance_wallet,
+              color: Colors.green,
+              subtitle:
+                  'Lunch ৳${data.lunchRevenue.toStringAsFixed(0)} · Dinner ৳${data.dinnerRevenue.toStringAsFixed(0)}\nTap for detailed breakdown →',
+            ),
           ),
           const SizedBox(height: 8),
           IntrinsicHeight(
@@ -308,6 +312,15 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             icon: Icons.currency_exchange,
             color: Colors.red,
             onTap: () => _goTo(const CreditRefundPage()),
+          ),
+          const SizedBox(height: 8),
+
+          QuickActionTile(
+            label: 'Revenue Overview',
+            description: 'Daily, weekly & monthly sales reports',
+            icon: Icons.bar_chart,
+            color: Colors.green,
+            onTap: () => _goTo(const RevenueOverviewPage()),
           ),
 
           const SizedBox(height: 24),

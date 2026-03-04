@@ -1,5 +1,6 @@
 package dsi.ruet.backend.dto.mealmanager;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,5 +21,7 @@ public class MealConfigResponse {
     private String purchaseDeadline; // HH:mm format for frontend display
     private String purchaseStartTime;
     private String purchaseEndTime;
+
+    @JsonProperty("isClosed")
     private boolean isClosed;
 }
