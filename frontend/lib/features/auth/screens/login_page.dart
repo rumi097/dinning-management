@@ -3,6 +3,9 @@ import 'package:frontend/core/services/service_locator.dart';
 import 'package:frontend/core/widgets/app_primary_button.dart';
 import 'package:frontend/core/widgets/app_text_field.dart';
 import 'package:frontend/core/widgets/loading_overlay.dart';
+import 'package:frontend/features/admin/screens/admin_home.dart';
+import 'package:frontend/features/admin/screens/admin_login_page.dart';
+import 'package:frontend/features/admin/services/admin_api_service.dart';
 import 'package:frontend/features/auth/screens/forgot_password_page.dart';
 import 'package:frontend/features/auth/screens/signup_page.dart';
 
@@ -103,6 +106,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateByRole(String role) {
+    if (role.toUpperCase() == 'ADMIN') {
+      // Admin requires a dedicated ApiClient + AdminApiService
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => AdminHome(
+            apiService: AdminApiService(client: ServiceLocator.apiClient),
+          ),
+        ),
+      );
+      return;
+    }
     final screen = _getScreenByRole(role);
     Navigator.of(context).pushReplacementNamed(screen);
   }
@@ -277,6 +291,29 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 8),
+                              Center(
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const AdminLoginPage(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(Icons.admin_panel_settings,
+                                      size: 18, color: scheme.onSurfaceVariant),
+                                  label: Text(
+                                    'Admin Login',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),

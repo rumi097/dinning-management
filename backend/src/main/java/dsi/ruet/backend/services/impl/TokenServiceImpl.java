@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +38,32 @@ public class TokenServiceImpl implements TokenService {
 
     @Autowired
     private TokenTransactionRepository tokenTransactionRepository;
+
+    /* ==================== 0. Today's Meal Stats ==================== */
+
+    @Override
+    public List<MealStatsResponse> getTodayMealStats(User currentUser) {
+        Long hallId = currentUser.getHall().getId();
+        LocalDate today = LocalDate.now();
+
+        List<Meal> todayMeals = mealRepository.findByHallIdAndMealDate(hallId, today);
+
+        return todayMeals.stream().map(meal -> {
+            long total = tokenRepository.countByMealId(meal.getId());
+            long used = tokenRepository.countByMealIdAndStatus(meal.getId(), TokenStatus.USED);
+            long remaining = total - used;
+
+            return MealStatsResponse.builder()
+                    .mealId(meal.getId())
+                    .mealType(meal.getMealType().name())
+                    .mealDate(meal.getMealDate())
+                    .menu(meal.getMenu())
+                    .totalTokens(total)
+                    .usedTokens(used)
+                    .remainingTokens(remaining)
+                    .build();
+        }).collect(Collectors.toList());
+    }
 
     /* ==================== 1. Purchase Token ==================== */
 

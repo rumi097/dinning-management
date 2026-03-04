@@ -153,7 +153,28 @@ public class AuthenticationService {
     }
 
 
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Value("${admin.password}")
+    private String adminPassword;
+
     public AuthResponse login(LoginRequest request) {
+        // If admin credentials, delegate to admin login flow (admin is not a DB user)
+        if (adminEmail.equals(request.getEmail())) {
+            if (!adminPassword.equals(request.getPassword())) {
+                throw new AuthenticationException("Invalid admin credentials");
+            }
+            String token = tokenProvider.generateTokenFromEmail(adminEmail, "ADMIN");
+            AuthResponse resp = new AuthResponse();
+            resp.setToken(token);
+            resp.setEmail(adminEmail);
+            resp.setRole("ADMIN");
+            resp.setName("System Administrator");
+            resp.setUserId(0L);
+            return resp;
+        }
+
         // Check if user exists and is verified
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException(

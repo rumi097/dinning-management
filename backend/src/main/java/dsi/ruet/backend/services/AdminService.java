@@ -3,7 +3,11 @@ package dsi.ruet.backend.services;
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
 import dsi.ruet.backend.dto.admin.AddHallRequest;
+import dsi.ruet.backend.dto.admin.AdminLoginRequest;
+import dsi.ruet.backend.dto.admin.AdminStatsResponse;
 import dsi.ruet.backend.dto.admin.UserResponse;
+import dsi.ruet.backend.dto.auth.AuthResponse;
+import dsi.ruet.backend.exception.AuthenticationException;
 import dsi.ruet.backend.exception.DuplicateEmailException;
 import dsi.ruet.backend.exception.ResourceNotFoundException;
 import dsi.ruet.backend.models.Hall;
@@ -13,10 +17,13 @@ import dsi.ruet.backend.models.enums.Role;
 import dsi.ruet.backend.repositories.UserRepository;
 import dsi.ruet.backend.repositories.StudentInfoRepository;
 import dsi.ruet.backend.repositories.HallRepository;
+import dsi.ruet.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,6 +37,71 @@ public class AdminService {
 
     @Autowired
     private HallRepository hallRepository;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Value("${admin.password}")
+    private String adminPassword;
+
+    /**
+     * Admin login with developer-configured credentials.
+     * Returns a JWT token with ADMIN role.
+     */
+    public AuthResponse adminLogin(AdminLoginRequest request) {
+        if (!adminEmail.equals(request.getEmail()) || !adminPassword.equals(request.getPassword())) {
+            throw new AuthenticationException("Invalid admin credentials");
+        }
+
+        String token = jwtTokenProvider.generateTokenFromEmail(adminEmail, "ADMIN");
+
+        AuthResponse response = new AuthResponse();
+        response.setToken(token);
+        response.setEmail(adminEmail);
+        response.setRole("ADMIN");
+        response.setName("System Administrator");
+        response.setUserId(0L);
+        return response;
+    }
+
+    /**
+     * Get system-wide statistics for admin dashboard
+     */
+    public AdminStatsResponse getStats() {
+        List<User> allUsers = userRepository.findAll();
+        List<Hall> allHalls = hallRepository.findAll();
+
+        long totalStudents = allUsers.stream().filter(u -> u.getRole() == Role.STUDENT).count();
+        long totalMealManagers = allUsers.stream().filter(u -> u.getRole() == Role.MEAL_MANAGER).count();
+        long totalDiningManagers = allUsers.stream().filter(u -> u.getRole() == Role.DINING_MANAGER).count();
+        long verifiedUsers = allUsers.stream().filter(u -> Boolean.TRUE.equals(u.getIsVerified())).count();
+        long unverifiedUsers = allUsers.size() - verifiedUsers;
+
+        List<AdminStatsResponse.HallSummary> hallSummaries = new ArrayList<>();
+        for (Hall hall : allHalls) {
+            hallSummaries.add(AdminStatsResponse.HallSummary.builder()
+                    .id(hall.getId())
+                    .name(hall.getName())
+                    .studentCount(userRepository.countByHallIdAndRole(hall.getId(), Role.STUDENT))
+                    .mealManagerCount(userRepository.countByHallIdAndRole(hall.getId(), Role.MEAL_MANAGER))
+                    .diningManagerCount(userRepository.countByHallIdAndRole(hall.getId(), Role.DINING_MANAGER))
+                    .build());
+        }
+
+        return AdminStatsResponse.builder()
+                .totalUsers(allUsers.size())
+                .totalStudents(totalStudents)
+                .totalMealManagers(totalMealManagers)
+                .totalDiningManagers(totalDiningManagers)
+                .totalHalls(allHalls.size())
+                .verifiedUsers(verifiedUsers)
+                .unverifiedUsers(unverifiedUsers)
+                .halls(hallSummaries)
+                .build();
+    }
 
     @Transactional
     public ApiResponse<User> addUser(AddUserRequest request) {
@@ -96,5 +168,25 @@ public class AdminService {
 
         Hall savedHall = hallRepository.save(hall);
         return new ApiResponse<>("Hall added successfully", savedHall);
+    }
+
+    public ApiResponse<List<Hall>> getAllHalls() {
+        List<Hall> halls = hallRepository.findAll();
+        return new ApiResponse<>("All halls retrieved successfully", halls);
+    }
+
+    @Transactional
+    public ApiResponse<Void> deleteHall(Long hallId) {
+        Hall hall = hallRepository.findById(hallId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + hallId));
+        // Check if any users belong to this hall
+        long usersInHall = userRepository.countByHallIdAndRole(hallId, Role.STUDENT)
+                + userRepository.countByHallIdAndRole(hallId, Role.MEAL_MANAGER)
+                + userRepository.countByHallIdAndRole(hallId, Role.DINING_MANAGER);
+        if (usersInHall > 0) {
+            throw new IllegalArgumentException("Cannot delete hall with " + usersInHall + " assigned users. Remove users first.");
+        }
+        hallRepository.delete(hall);
+        return new ApiResponse<>("Hall deleted successfully", null);
     }
 }

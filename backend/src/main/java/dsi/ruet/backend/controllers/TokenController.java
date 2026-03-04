@@ -31,6 +31,22 @@ public class TokenController {
     @Autowired
     private TokenService tokenService;
 
+    /* ==================== 0. Meal Stats (Dining Manager) ==================== */
+
+    /**
+     * Returns today's meal stats for the manager's hall.
+     * Shows total tokens sold, used, and remaining for each meal.
+     * Restricted to MEAL_MANAGER and DINING_MANAGER roles.
+     */
+    @GetMapping("/meal-stats")
+    @PreAuthorize("hasAnyRole('MEAL_MANAGER', 'DINING_MANAGER')")
+    public ResponseEntity<ApiResponse<List<MealStatsResponse>>> getTodayMealStats(
+            @AuthenticationPrincipal User currentUser) {
+
+        List<MealStatsResponse> stats = tokenService.getTodayMealStats(currentUser);
+        return ResponseEntity.ok(new ApiResponse<>("Meal stats retrieved successfully.", stats));
+    }
+
     /* ==================== 1. Purchase Token ==================== */
 
     /**

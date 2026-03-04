@@ -89,145 +89,48 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       _errorMessage = null;
     });
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final results = await Future.wait([
-    //     widget.apiService.getMarketplacePosts(),
-    //     widget.apiService.getMarketplaceMyTokens(),
-    //     widget.apiService.getMyListings(),
-    //     widget.apiService.getMyPurchases(),
-    //   ]);
-    //   if (!mounted) return;
-    //   setState(() {
-    //     openPosts = results[0] as List<MarketplacePost>;
-    //     myTokens = results[1] as List<MyToken>;
-    //     myListings = results[2] as List<MyListing>;
-    //     myPurchases = results[3] as List<MyPurchase>;
-    //     _isLoading = false;
-    //   });
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _errorMessage = 'Failed to load data. Pull to retry.';
-    //     _isLoading = false;
-    //   });
-    // }
-
-    // --- Dummy data (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() {
-      openPosts = [
-        MarketplacePost(
-          postId: 'POST-001',
-          sellerName: 'Rahim Uddin',
-          mealType: 'Lunch',
-          hallName: 'Shahid Minar Hall',
-          mealTime: '12:30 PM',
-          mealPrice: 55,
-          avatarColor: Colors.blue,
-          studentId: 'STU-101',
-          mobile: '01712345678',
-          roomNo: '305',
-        ),
-        MarketplacePost(
-          postId: 'POST-002',
-          sellerName: 'Karim Hasan',
-          mealType: 'Dinner',
-          hallName: 'Bangabandhu Hall',
-          mealTime: '7:30 PM',
-          mealPrice: 50,
-          avatarColor: Colors.green,
-          studentId: 'STU-102',
-          mobile: '01898765432',
-          roomNo: '210',
-        ),
-        MarketplacePost(
-          postId: 'POST-003',
-          sellerName: 'Nusrat Jahan',
-          mealType: 'Lunch',
-          hallName: 'Rokeya Hall',
-          mealTime: '12:30 PM',
-          mealPrice: 60,
-          avatarColor: Colors.purple,
-          studentId: 'STU-103',
-          mobile: '01556781234',
-          roomNo: '412',
-        ),
-      ];
-      myTokens = const [
-        MyToken(
-          tokenId: 'TKN-010',
-          mealType: 'Lunch',
-          date: '2025-01-16',
-          price: 50,
-          status: 'AVAILABLE',
-        ),
-        MyToken(
-          tokenId: 'TKN-011',
-          mealType: 'Dinner',
-          date: '2025-01-16',
-          price: 50,
-          status: 'LISTED',
-        ),
-      ];
-      myListings = [
-        MyListing(
-          listingId: 'LST-001',
-          mealType: 'Dinner',
-          buyerName: 'Fahim Ahmed',
-          price: 55,
-          status: 'PENDING',
-          pendingSince: DateTime.now().subtract(const Duration(minutes: 5)),
-        ),
-        const MyListing(
-          listingId: 'LST-002',
-          mealType: 'Lunch',
-          buyerName: '',
-          price: 50,
-          status: 'OPEN',
-        ),
-      ];
-      myPurchases = [
-        MyPurchase(
-          purchaseId: 'PUR-001',
-          sellerName: 'Rahim Uddin',
-          mealType: 'Lunch',
-          price: 55,
-          status: 'PENDING',
-          pendingSince: DateTime.now().subtract(const Duration(minutes: 3)),
-        ),
-      ];
-      _isLoading = false;
-    });
+    try {
+      final results = await Future.wait([
+        widget.apiService.getMarketplacePosts(),
+        widget.apiService.getMarketplaceMyTokens(),
+        widget.apiService.getMyListings(),
+        widget.apiService.getMyPurchases(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        openPosts = results[0] as List<MarketplacePost>;
+        myTokens = results[1] as List<MyToken>;
+        myListings = results[2] as List<MyListing>;
+        myPurchases = results[3] as List<MyPurchase>;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load data. Pull to retry.';
+        _isLoading = false;
+      });
+    }
   }
 
   // --- Action methods (real API calls) ---
 
-  Future<void> sendBuyRequest(String postId, {required String paymentMethod}) async {
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   await widget.apiService.sendBuyRequest(postId, paymentMethod: paymentMethod);
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Buy request sent ($paymentMethod)')),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Buy request failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
-
-    // --- Dummy action (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Buy request sent via $paymentMethod (dummy)')),
-    );
+  Future<void> sendBuyRequest(String postId, {required String paymentType}) async {
+    try {
+      await widget.apiService.sendBuyRequest(postId, paymentType: paymentType);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Buy request sent ($paymentType)')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Buy request failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     await _loadData();
   }
 
@@ -280,7 +183,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
-                    sendBuyRequest(postId, paymentMethod: 'cash');
+                    sendBuyRequest(postId, paymentType: 'TRANSACTION');
                   },
                 ),
                 const SizedBox(height: 8),
@@ -302,7 +205,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
-                    sendBuyRequest(postId, paymentMethod: 'credit');
+                    sendBuyRequest(postId, paymentType: 'TOPUP');
                   },
                 ),
                 const SizedBox(height: 8),
@@ -315,112 +218,78 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   }
 
   Future<void> confirmListing(String listingId) async {
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   await widget.apiService.confirmListing(listingId);
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Listing $listingId confirmed')),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Confirm failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
-
-    // --- Dummy action (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Listing $listingId confirmed (dummy)')),
-    );
+    try {
+      await widget.apiService.confirmListing(listingId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Listing $listingId confirmed')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Confirm failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     await _loadData();
   }
 
   Future<void> rejectListing(String listingId) async {
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   await widget.apiService.rejectListing(listingId);
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Listing $listingId rejected')),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Reject failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
-
-    // --- Dummy action (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Listing $listingId rejected (dummy)')),
-    );
+    try {
+      await widget.apiService.rejectListing(listingId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Listing $listingId rejected')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Reject failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     await _loadData();
   }
 
   Future<void> cancelPurchase(String purchaseId) async {
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   await widget.apiService.cancelPurchase(purchaseId);
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Purchase $purchaseId cancelled')),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Cancel failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
-
-    // --- Dummy action (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Purchase $purchaseId cancelled (dummy)')),
-    );
+    try {
+      await widget.apiService.cancelPurchase(purchaseId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Purchase $purchaseId cancelled')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cancel failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     await _loadData();
   }
 
   Future<void> sellToken(String tokenId) async {
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   await widget.apiService.sellToken(
-    //     CreateSellRequest(tokenId: tokenId, price: 50),
-    //   );
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Token $tokenId listed for sale')),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Sell failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
-
-    // --- Dummy action (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Token $tokenId listed for sale (dummy)')),
-    );
+    try {
+      await widget.apiService.sellToken(tokenId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Token $tokenId listed for sale')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sell failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     await _loadData();
   }
 
@@ -1411,30 +1280,7 @@ class _SellerProfileDialogState extends State<_SellerProfileDialog> {
   }
 
   Future<void> _fetchProfile() async {
-    // TODO: Uncomment when backend is ready
-    // setState(() {
-    //   _isLoading = true;
-    //   _errorMessage = null;
-    // });
-    //
-    // try {
-    //   final profile =
-    //       await widget.apiService.getSellerProfile(widget.post.studentId);
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _profile = profile;
-    //     _isLoading = false;
-    //   });
-    // } catch (_) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _isLoading = false;
-    //     _errorMessage = null;
-    //     _profile = null;
-    //   });
-    // }
-
-    // --- Dummy: skip API, use post data directly ---
+    // No dedicated seller profile endpoint — use post data directly
     setState(() {
       _isLoading = false;
       _profile = null;

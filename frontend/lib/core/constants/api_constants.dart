@@ -1,8 +1,12 @@
 class ApiConstants {
-  // Base URL - change this to your backend URL
-  // For local testing: http://localhost:8080/api/v1
-  // For production: update accordingly
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  // Base URL — configured at build time via --dart-define=BASE_URL=...
+  // Defaults to localhost for development.
+  // Production example:
+  //   flutter build apk --dart-define=BASE_URL=https://your-server.com/api/v1
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'http://localhost:8080/api/v1',
+  );
 
   // Auth endpoints
   static const String loginEndpoint = '/auth/login';

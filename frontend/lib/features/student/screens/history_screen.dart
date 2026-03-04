@@ -29,80 +29,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
       _errorMessage = null;
     });
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final data = await widget.apiService.getTransactions();
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _transactions = data;
-    //     _isLoading = false;
-    //   });
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _errorMessage = 'Failed to load transactions. Pull to retry.';
-    //     _isLoading = false;
-    //   });
-    // }
-
-    // --- Dummy data (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() {
-      _transactions = const [
-        TransactionData(
-          status: 'Purchased',
-          tokenType: 'Lunch Token',
-          date: '2025-01-15',
-          hall: 'Shahid Minar Hall',
-          time: '12:30 PM',
-          amount: -50,
-          tag: 'Purchased',
-          paymentMethod: 'credit',
-        ),
-        TransactionData(
-          status: 'Purchased',
-          tokenType: 'Dinner Token',
-          date: '2025-01-14',
-          hall: 'Bangabandhu Hall',
-          time: '7:30 PM',
-          amount: -50,
-          tag: 'Purchased',
-          paymentMethod: 'cash',
-        ),
-        TransactionData(
-          status: 'Sold',
-          tokenType: 'Lunch Token',
-          date: '2025-01-13',
-          hall: 'Rokeya Hall',
-          time: '12:30 PM',
-          amount: 55,
-          tag: 'Sold',
-          paymentMethod: 'cash',
-        ),
-        TransactionData(
-          status: 'Purchased',
-          tokenType: 'Dinner Token',
-          date: '2025-01-12',
-          hall: 'Shahid Minar Hall',
-          time: '7:30 PM',
-          amount: -50,
-          tag: 'Purchased',
-          paymentMethod: 'credit',
-        ),
-        TransactionData(
-          status: 'Sold',
-          tokenType: 'Dinner Token',
-          date: '2025-01-11',
-          hall: 'Bangabandhu Hall',
-          time: '7:30 PM',
-          amount: 60,
-          tag: 'Sold',
-          paymentMethod: 'cash',
-        ),
-      ];
-      _isLoading = false;
-    });
+    try {
+      // No dedicated transaction endpoint — derive history from owned tokens
+      final tokens = await widget.apiService.getMyTokens();
+      if (!mounted) return;
+      setState(() {
+        _transactions = tokens.map((t) {
+          final isUsed = t.status == 'Used' || !t.isValid;
+          return TransactionData(
+            status: isUsed ? 'Used' : 'Purchased',
+            tokenType: '${t.tokenType} Token',
+            date: t.date,
+            hall: t.hall.isNotEmpty ? t.hall : '-',
+            time: t.time.isNotEmpty ? t.time : '-',
+            amount: -t.price,
+            tag: isUsed ? 'Used' : 'Purchased',
+            paymentMethod: 'wallet',
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load transactions. Pull to retry.';
+        _isLoading = false;
+      });
+    }
   }
 
   @override

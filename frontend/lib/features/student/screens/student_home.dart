@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/service_locator.dart';
 import '../services/student_api_service.dart';
 import 'dashboard_screen.dart';
 import 'marketplace_screen.dart';
@@ -22,7 +23,7 @@ class _StudentHomeState extends State<StudentHome> {
   @override
   void initState() {
     super.initState();
-    _apiService = StudentApiService(token: widget.token);
+    _apiService = StudentApiService.withClient(ServiceLocator.apiClient);
     _screens = [
       DashboardScreen(apiService: _apiService),
       QrScreen(apiService: _apiService),

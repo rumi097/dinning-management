@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/models.dart';
 import '../services/student_api_service.dart';
@@ -14,7 +14,9 @@ class QrScreen extends StatefulWidget {
 
 class _QrScreenState extends State<QrScreen> {
   String? _activeTokenId;
+  String? _qrBase64; // base64 QR image from backend
   bool _isLoading = true;
+  bool _isGeneratingQr = false;
   String? _errorMessage;
   List<TokenInfo> _tokens = [];
 
@@ -30,61 +32,56 @@ class _QrScreenState extends State<QrScreen> {
       _errorMessage = null;
     });
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final tokenModels = await widget.apiService.getMyTokens();
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _tokens = tokenModels
-    //         .map((t) => TokenInfo.fromTokenModel(t))
-    //         .toList();
-    //     _isLoading = false;
-    //   });
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _errorMessage = 'Failed to load tokens. Pull to retry.';
-    //     _isLoading = false;
-    //   });
-    // }
-
-    // --- Dummy data (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() {
-      _tokens = const [
-        TokenInfo(
-          tokenId: 'TKN-001',
-          tokenType: 'Lunch Token',
-          date: '2025-01-15',
-          hall: 'Shahid Minar Hall',
-          time: '12:30 PM - 2:00 PM',
-          status: 'Valid',
-          isValid: true,
-        ),
-        TokenInfo(
-          tokenId: 'TKN-002',
-          tokenType: 'Dinner Token',
-          date: '2025-01-15',
-          hall: 'Bangabandhu Hall',
-          time: '7:30 PM - 9:00 PM',
-          status: 'Used',
-          isValid: false,
-        ),
-      ];
-      _isLoading = false;
-    });
+    try {
+      final tokenModels = await widget.apiService.getMyTokens();
+      if (!mounted) return;
+      setState(() {
+        _tokens = tokenModels
+            .map((t) => TokenInfo.fromTokenModel(t))
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load tokens. Pull to retry.';
+        _isLoading = false;
+      });
+    }
   }
 
-  void _onUseNow(TokenInfo token) {
+  Future<void> _onUseNow(TokenInfo token) async {
     setState(() {
+      _isGeneratingQr = true;
       _activeTokenId = token.tokenId;
+      _qrBase64 = null;
     });
+
+    try {
+      final qrCode = await widget.apiService.generateQr(int.parse(token.tokenId));
+      if (!mounted) return;
+      setState(() {
+        _qrBase64 = qrCode;
+        _isGeneratingQr = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isGeneratingQr = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to generate QR: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _onCloseQr() {
     setState(() {
       _activeTokenId = null;
+      _qrBase64 = null;
     });
   }
 
@@ -238,17 +235,36 @@ class _QrScreenState extends State<QrScreen> {
                   width: 2,
                 ),
               ),
-              child: QrImageView(
-                data: token.tokenId,
-                version: QrVersions.auto,
-                size: 200,
-                gapless: true,
-                errorStateBuilder: (ctx, err) {
-                  return const Center(
-                    child: Text('Error generating QR'),
-                  );
-                },
-              ),
+              child: _isGeneratingQr
+                  ? const SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : _qrBase64 != null && _qrBase64!.isNotEmpty
+                      ? Image.memory(
+                          base64Decode(_qrBase64!),
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => QrImageView(
+                            data: token.tokenId,
+                            version: QrVersions.auto,
+                            size: 200,
+                            gapless: true,
+                          ),
+                        )
+                      : QrImageView(
+                          data: token.tokenId,
+                          version: QrVersions.auto,
+                          size: 200,
+                          gapless: true,
+                          errorStateBuilder: (ctx, err) {
+                            return const Center(
+                              child: Text('Error generating QR'),
+                            );
+                          },
+                        ),
             ),
 
             const SizedBox(height: 16),

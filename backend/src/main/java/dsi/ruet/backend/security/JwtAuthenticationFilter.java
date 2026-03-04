@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -33,13 +35,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwt != null && tokenProvider.validateToken(jwt)) {
                 String email = tokenProvider.getEmailFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                String role = tokenProvider.getRoleFromToken(jwt);
 
-                UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // Admin users are not in the DB — build auth from JWT claims directly
+                if ("ADMIN".equals(role)) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email, null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         } catch (JwtException ex) {
             logger.debug("JWT processing failed", ex);

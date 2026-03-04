@@ -29,108 +29,50 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       _errorMessage = null;
     });
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final available = await widget.apiService.getAvailableTokens();
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _meals = available
-    //         .map((t) => MealOption(
-    //               mealType: t.tokenType,
-    //               price: t.price,
-    //               time: t.time,
-    //               menu: t.menu,
-    //               icon: t.tokenType == 'Lunch'
-    //                   ? Icons.wb_sunny_outlined
-    //                   : Icons.nightlight_outlined,
-    //               accentColor: t.tokenType == 'Lunch'
-    //                   ? Colors.orange
-    //                   : Colors.deepPurple,
-    //             ))
-    //         .toList();
-    //     _isLoading = false;
-    //   });
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _errorMessage = 'Failed to load available tokens.';
-    //     _isLoading = false;
-    //   });
-    // }
-
-    // --- Dummy data (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() {
-      _meals = [
-        MealOption(
-          mealType: 'Lunch',
-          price: 50,
-          time: '12:30 PM - 2:00 PM',
-          menu: ['Rice', 'Chicken Curry', 'Dal', 'Salad', 'Pudding'],
-          icon: Icons.wb_sunny_outlined,
-          accentColor: Colors.orange,
-        ),
-        MealOption(
-          mealType: 'Dinner',
-          price: 50,
-          time: '7:30 PM - 9:00 PM',
-          menu: ['Rice', 'Fish Curry', 'Vegetable', 'Chatni', 'Sweet'],
-          icon: Icons.nightlight_outlined,
-          accentColor: Colors.deepPurple,
-        ),
-      ];
-      _isLoading = false;
-    });
+    try {
+      final available = await widget.apiService.getAvailableMeals();
+      if (!mounted) return;
+      setState(() {
+        _meals = available;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load available tokens.';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _handlePurchase(MealOption meal) async {
     if (_isPurchasing) return;
     setState(() => _isPurchasing = true);
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final today = DateTime.now();
-    //   final dateStr =
-    //       '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    //   await widget.apiService.purchaseToken(
-    //     PurchaseTokenRequest(
-    //       tokenType: meal.mealType.toLowerCase(),
-    //       date: dateStr,
-    //     ),
-    //   );
-    //   if (!mounted) return;
-    //   Navigator.pop(context);
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('${meal.mealType} token purchased!'),
-    //       backgroundColor: Colors.green,
-    //     ),
-    //   );
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   Navigator.pop(context);
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Purchase failed: $e'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // } finally {
-    //   if (mounted) setState(() => _isPurchasing = false);
-    // }
-
-    // --- Dummy purchase (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    Navigator.pop(context); // close dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${meal.mealType} token purchased! (dummy)'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    setState(() => _isPurchasing = false);
+    try {
+      // meal.time holds the mealId (stored by getAvailableMeals)
+      final mealId = int.parse(meal.time);
+      await widget.apiService.purchaseToken(mealId);
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${meal.mealType} token purchased!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Purchase failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isPurchasing = false);
+    }
   }
 
   @override

@@ -7,9 +7,9 @@ import dsi.ruet.backend.marketplace.dto.MarketplacePostResponse;
 import dsi.ruet.backend.marketplace.dto.SellRequest;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.enums.TransactionType;
-import dsi.ruet.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,7 +20,6 @@ import java.util.List;
 public class MarketplaceController {
 
     private final MarketplaceService marketplaceService;
-    private final UserRepository userRepository;
 
     // ── Browse ───────────────────────────────────────────────────────────
 
@@ -30,8 +29,8 @@ public class MarketplaceController {
      */
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<List<MarketplacePostResponse>>> getOpenPosts(
-            @RequestHeader("X-User-Id") Long userId) {
-        Long hallId = getHallIdForUser(userId);
+            @AuthenticationPrincipal User currentUser) {
+        Long hallId = currentUser.getHall().getId();
         List<MarketplacePostResponse> posts = marketplaceService.getOpenPosts(hallId);
         return ResponseEntity.ok(ApiResponse.success(posts, "Open marketplace posts"));
     }
@@ -42,8 +41,8 @@ public class MarketplaceController {
      */
     @GetMapping("/my-tokens")
     public ResponseEntity<ApiResponse<List<TokenResponse>>> getMyTokens(
-            @RequestHeader("X-User-Id") Long userId) {
-        List<TokenResponse> tokens = marketplaceService.getMyAvailableTokens(userId);
+            @AuthenticationPrincipal User currentUser) {
+        List<TokenResponse> tokens = marketplaceService.getMyAvailableTokens(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(tokens, "Your available tokens"));
     }
 
@@ -56,10 +55,10 @@ public class MarketplaceController {
      */
     @PostMapping("/sell")
     public ResponseEntity<ApiResponse<MarketplacePostResponse>> sell(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @RequestBody SellRequest request) {
         MarketplacePostResponse post =
-                marketplaceService.createSellPost(userId, request.getTokenId());
+                marketplaceService.createSellPost(currentUser.getId(), request.getTokenId());
         return ResponseEntity.ok(ApiResponse.success(post, "Token listed for sale"));
     }
 
@@ -69,9 +68,9 @@ public class MarketplaceController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> cancelListing(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id) {
-        marketplaceService.cancelListing(id, userId);
+        marketplaceService.cancelListing(id, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(null, "Listing cancelled"));
     }
 
@@ -84,10 +83,10 @@ public class MarketplaceController {
      */
     @PostMapping("/buy")
     public ResponseEntity<ApiResponse<MarketplacePostResponse>> buyRequest(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @RequestBody BuyRequest request) {
         TransactionType paymentType = TransactionType.valueOf(request.getPaymentType().toUpperCase());
-        MarketplacePostResponse post = marketplaceService.sendBuyRequest(request.getPostId(), userId, paymentType);
+        MarketplacePostResponse post = marketplaceService.sendBuyRequest(request.getPostId(), currentUser.getId(), paymentType);
         return ResponseEntity.ok(ApiResponse.success(post, "Buy request sent — seller has 15 min to confirm"));
     }
 
@@ -97,9 +96,9 @@ public class MarketplaceController {
      */
     @PostMapping("/purchases/{id}/cancel")
     public ResponseEntity<ApiResponse<MarketplacePostResponse>> cancelRequest(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id) {
-        MarketplacePostResponse post = marketplaceService.cancelBuyRequest(id, userId);
+        MarketplacePostResponse post = marketplaceService.cancelBuyRequest(id, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(post, "Buy request cancelled"));
     }
 
@@ -111,9 +110,9 @@ public class MarketplaceController {
      */
     @PostMapping("/listings/{id}/confirm")
     public ResponseEntity<ApiResponse<MarketplacePostResponse>> confirmTransfer(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id) {
-        MarketplacePostResponse post = marketplaceService.confirmTransfer(id, userId);
+        MarketplacePostResponse post = marketplaceService.confirmTransfer(id, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(post, "Token transferred successfully"));
     }
 
@@ -123,9 +122,9 @@ public class MarketplaceController {
      */
     @PostMapping("/listings/{id}/reject")
     public ResponseEntity<ApiResponse<MarketplacePostResponse>> rejectRequest(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id) {
-        MarketplacePostResponse post = marketplaceService.rejectBuyRequest(id, userId);
+        MarketplacePostResponse post = marketplaceService.rejectBuyRequest(id, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(post, "Buy request rejected"));
     }
 
@@ -137,8 +136,8 @@ public class MarketplaceController {
      */
     @GetMapping("/my-listings")
     public ResponseEntity<ApiResponse<List<MarketplacePostResponse>>> myListings(
-            @RequestHeader("X-User-Id") Long userId) {
-        List<MarketplacePostResponse> listings = marketplaceService.getMyListings(userId);
+            @AuthenticationPrincipal User currentUser) {
+        List<MarketplacePostResponse> listings = marketplaceService.getMyListings(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(listings, "Your listings"));
     }
 
@@ -148,16 +147,9 @@ public class MarketplaceController {
      */
     @GetMapping("/my-purchases")
     public ResponseEntity<ApiResponse<List<MarketplacePostResponse>>> myPurchases(
-            @RequestHeader("X-User-Id") Long userId) {
-        List<MarketplacePostResponse> purchases = marketplaceService.getMyPurchases(userId);
+            @AuthenticationPrincipal User currentUser) {
+        List<MarketplacePostResponse> purchases = marketplaceService.getMyPurchases(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(purchases, "Your purchase requests"));
     }
 
-    // ── Internal Helper ──────────────────────────────────────────────────
-
-    private Long getHallIdForUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-        return user.getHall().getId();
-    }
 }

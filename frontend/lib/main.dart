@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/services/service_locator.dart';
+import 'package:frontend/features/admin/screens/admin_home.dart';
+import 'package:frontend/features/admin/services/admin_api_service.dart';
 import 'package:frontend/features/auth/screens/login_page.dart';
+import 'package:frontend/features/dining_manager/screens/dining_manager_home.dart';
 import 'package:frontend/features/meal_manager/screens/manager_dashboard.dart';
 import 'package:frontend/features/student/screens/student_home.dart';
 import 'core/theme/app_theme.dart';
@@ -70,6 +73,12 @@ class _DiningAppState extends State<DiningApp> {
     } else if (_userRole.toUpperCase() == 'MEAL_MANAGER' ||
         _userRole.toUpperCase() == 'MANAGER') {
       homeScreen = const ManagerDashboard();
+    } else if (_userRole.toUpperCase() == 'DINING_MANAGER') {
+      homeScreen = const DiningManagerHome();
+    } else if (_userRole.toUpperCase() == 'ADMIN') {
+      homeScreen = AdminHome(
+        apiService: AdminApiService(client: ServiceLocator.apiClient),
+      );
     } else {
       // Default to student home for 'STUDENT' or other roles
       homeScreen = StudentHome(token: _token);
@@ -86,23 +95,8 @@ class _DiningAppState extends State<DiningApp> {
         '/login': (_) => const LoginPage(),
         '/student-home': (_) => StudentHome(token: _token),
         '/meal-manager-home': (_) => const ManagerDashboard(),
-        '/dining-manager-home': (_) =>
-            const _PlaceholderPage(title: 'Dining Manager'),
+        '/dining-manager-home': (_) => const DiningManagerHome(),
       },
-    );
-  }
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  final String title;
-
-  const _PlaceholderPage({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('$title Home - Coming Soon')),
     );
   }
 }

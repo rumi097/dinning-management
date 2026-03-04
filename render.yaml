@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: dsi-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false  # Set manually: jdbc:postgresql://host:5432/dsiApp
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false  # Set from Render Postgres dashboard
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false  # Set from Render Postgres dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        value: admin@ruet2024
+      - key: SPRING_MAIL_USERNAME
+        sync: false  # Your Gmail address
+      - key: SPRING_MAIL_PASSWORD
+        sync: false  # Your Gmail App Password
+      - key: PORT
+        value: "8080"
+
+databases:
+  - name: dsi-postgres
+    plan: free
+    databaseName: dsiApp
+    user: dsiuser

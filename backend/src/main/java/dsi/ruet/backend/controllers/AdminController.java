@@ -1,12 +1,16 @@
 package dsi.ruet.backend.controllers;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import dsi.ruet.backend.dto.ApiResponse;
 import dsi.ruet.backend.dto.admin.AddUserRequest;
 import dsi.ruet.backend.dto.admin.AddHallRequest;
+import dsi.ruet.backend.dto.admin.AdminLoginRequest;
+import dsi.ruet.backend.dto.admin.AdminStatsResponse;
 import dsi.ruet.backend.dto.admin.UserResponse;
+import dsi.ruet.backend.dto.auth.AuthResponse;
 import dsi.ruet.backend.models.User;
 import dsi.ruet.backend.models.Hall;
 import dsi.ruet.backend.services.AdminService;
@@ -25,10 +29,35 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    // ========== PUBLIC (no auth needed) ==========
+
+    /**
+     * Admin login with developer-configured credentials.
+     * Returns JWT token with ADMIN role.
+     */
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> adminLogin(@RequestBody AdminLoginRequest request) {
+        AuthResponse response = adminService.adminLogin(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // ========== PROTECTED (ADMIN role required) ==========
+
+    /**
+     * Get system-wide statistics
+     */
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminStatsResponse>> getStats() {
+        AdminStatsResponse stats = adminService.getStats();
+        return ResponseEntity.ok(new ApiResponse<>("Stats retrieved successfully", stats));
+    }
+
     /**
      * Add a new user to the system
      */
     @PostMapping("/add-user")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<User>> addUser(@Valid @RequestBody AddUserRequest request) {
         ApiResponse<User> response = adminService.addUser(request);
         return ResponseEntity.ok(response);
@@ -38,6 +67,7 @@ public class AdminController {
      * Get user by email
      */
     @GetMapping("/user")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> getUserByEmail(@RequestParam String email) {
         ApiResponse<UserResponse> response = adminService.getUserByEmail(email);
         return ResponseEntity.ok(response);
@@ -47,6 +77,7 @@ public class AdminController {
      * Get all users
      */
     @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         ApiResponse<List<UserResponse>> response = adminService.getAllUsers();
         return ResponseEntity.ok(response);
@@ -56,8 +87,19 @@ public class AdminController {
      * Delete user by email
      */
     @DeleteMapping("/user")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUserByEmail(@RequestParam String email) {
         ApiResponse<Void> response = adminService.deleteUserByEmail(email);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get all halls
+     */
+    @GetMapping("/halls")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<Hall>>> getAllHalls() {
+        ApiResponse<List<Hall>> response = adminService.getAllHalls();
         return ResponseEntity.ok(response);
     }
 
@@ -65,8 +107,19 @@ public class AdminController {
      * Add a new hall to the system
      */
     @PostMapping("/add-hall")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Hall>> addHall(@Valid @RequestBody AddHallRequest request) {
         ApiResponse<Hall> response = adminService.addHall(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Delete a hall (only if no users assigned)
+     */
+    @DeleteMapping("/hall/{hallId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteHall(@PathVariable Long hallId) {
+        ApiResponse<Void> response = adminService.deleteHall(hallId);
         return ResponseEntity.ok(response);
     }
 }

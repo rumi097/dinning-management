@@ -12,23 +12,17 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class Wallet {
 
-    /** Primary key — maps to the "user_id" column (the actual PK in PostgreSQL). */
     @Id
-    @Column(name = "user_id")
+    @Column(name = "id")
     private Long userId;
-
-    /** The "id" column — also an FK to users.id, must equal userId. */
-    @Column(name = "id", nullable = false)
-    private Long id;
 
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
-    /** Convenience: set both userId (PK) and id from a User object. */
+    /** Convenience: set userId (PK) from a User object. */
     public void setUser(User user) {
         if (user != null) {
             this.userId = user.getId();
-            this.id = user.getId();
         }
     }
 

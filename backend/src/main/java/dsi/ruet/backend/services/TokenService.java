@@ -11,6 +11,11 @@ import java.util.List;
 public interface TokenService {
 
     /**
+     * Get today's meal stats (total/used/remaining tokens) for the manager's hall.
+     */
+    List<MealStatsResponse> getTodayMealStats(User currentUser);
+
+    /**
      * Purchase a meal token for the authenticated student.
      * Validates deadline, wallet balance, and duplicate purchase.
      */

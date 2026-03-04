@@ -33,69 +33,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _errorMessage = null;
     });
 
-    // TODO: Uncomment when backend is ready
-    // try {
-    //   final results = await Future.wait([
-    //     widget.apiService.getWalletBalance(),
-    //     widget.apiService.getMyTokens(),
-    //     widget.apiService.getTodayMenu(),
-    //   ]);
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _wallet = results[0] as WalletModel;
-    //     _tokens = results[1] as List<TokenModel>;
-    //     _todayMenu = results[2] as List<MenuModel>;
-    //     _isLoading = false;
-    //   });
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   setState(() {
-    //     _errorMessage = 'Failed to load dashboard. Pull to retry.';
-    //     _isLoading = false;
-    //   });
-    // }
-
-    // --- Dummy data (remove when backend is ready) ---
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() {
-      _wallet = const WalletModel(balance: 250.0);
-      _tokens = const [
-        TokenModel(
-          id: 'TKN-001',
-          tokenType: 'Lunch',
-          date: '2025-01-15',
-          hall: 'Shahid Minar Hall',
-          time: '12:30 PM - 2:00 PM',
-          status: 'Valid',
-          price: 50,
-          isValid: true,
-        ),
-        TokenModel(
-          id: 'TKN-002',
-          tokenType: 'Dinner',
-          date: '2025-01-15',
-          hall: 'Bangabandhu Hall',
-          time: '7:30 PM - 9:00 PM',
-          status: 'Used',
-          price: 50,
-          isValid: false,
-        ),
-      ];
-      _todayMenu = const [
-        MenuModel(
-          mealType: 'Lunch',
-          time: '12:30 PM - 2:00 PM',
-          items: ['Rice', 'Chicken Curry', 'Dal', 'Salad', 'Pudding'],
-        ),
-        MenuModel(
-          mealType: 'Dinner',
-          time: '7:30 PM - 9:00 PM',
-          items: ['Rice', 'Fish Curry', 'Vegetable', 'Chatni', 'Sweet'],
-        ),
-      ];
-      _isLoading = false;
-    });
+    try {
+      final results = await Future.wait([
+        widget.apiService.getWalletBalance(),
+        widget.apiService.getMyTokens(),
+        widget.apiService.getTodayMenu(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _wallet = results[0] as WalletModel;
+        _tokens = results[1] as List<TokenModel>;
+        _todayMenu = results[2] as List<MenuModel>;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load dashboard. Pull to retry.';
+        _isLoading = false;
+      });
+    }
   }
 
   @override

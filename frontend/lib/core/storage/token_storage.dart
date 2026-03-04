@@ -7,13 +7,13 @@ class TokenStorage {
   static const String _userIdKey = 'user_id';
   static const String _roleKey = 'user_role';
 
-  late SharedPreferences? _prefs;
+  SharedPreferences? _prefs;
 
   /// Initialize the SharedPreferences
   /// On web, this will fail gracefully (SharedPreferences not supported)
   Future<void> init() async {
     try {
-      _prefs = await SharedPreferences.getInstance();
+      _prefs ??= await SharedPreferences.getInstance();
     } catch (e) {
       // SharedPreferences not available on web or in some environments
       // App will handle this gracefully - isLoggedIn() will return false
@@ -21,56 +21,72 @@ class TokenStorage {
     }
   }
 
+  /// Ensure _prefs is initialized before any access
+  Future<void> _ensureInitialized() async {
+    if (_prefs == null) {
+      await init();
+    }
+  }
+
   /// Save authentication token
   Future<void> saveToken(String token) async {
-    if (_prefs == null) return; // Skip on web/unsupported platforms
+    await _ensureInitialized();
+    if (_prefs == null) return;
     await _prefs!.setString(_tokenKey, token);
   }
 
   /// Get authentication token
   Future<String?> getToken() async {
-    if (_prefs == null) return null; // Return null on web/unsupported platforms
+    await _ensureInitialized();
+    if (_prefs == null) return null;
     return _prefs!.getString(_tokenKey);
   }
 
   /// Save user email
   Future<void> saveEmail(String email) async {
+    await _ensureInitialized();
     if (_prefs == null) return;
     await _prefs!.setString(_emailKey, email);
   }
 
   /// Get user email
   Future<String?> getEmail() async {
+    await _ensureInitialized();
     if (_prefs == null) return null;
     return _prefs!.getString(_emailKey);
   }
 
   /// Save user ID
   Future<void> saveUserId(int userId) async {
+    await _ensureInitialized();
     if (_prefs == null) return;
     await _prefs!.setInt(_userIdKey, userId);
   }
 
   /// Get user ID
   Future<int?> getUserId() async {
+    await _ensureInitialized();
     if (_prefs == null) return null;
     return _prefs!.getInt(_userIdKey);
   }
 
   /// Save user role
   Future<void> saveRole(String role) async {
+    await _ensureInitialized();
     if (_prefs == null) return;
     await _prefs!.setString(_roleKey, role);
   }
 
   /// Get user role
   Future<String?> getRole() async {
+    await _ensureInitialized();
     if (_prefs == null) return null;
     return _prefs!.getString(_roleKey);
   }
 
   /// Clear all stored data (logout)
   Future<void> clearAll() async {
+    await _ensureInitialized();
     if (_prefs == null) return;
     await _prefs!.clear();
   }
