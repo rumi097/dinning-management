@@ -56,19 +56,27 @@ public class SecurityConfig {
                 // ---- Public endpoints (no JWT required) ----
                 .requestMatchers(
                         "/health",
+                        "/api/v1/health",
                         "/auth/login",
+                        "/api/v1/auth/login",
                         "/auth/signup",
+                        "/api/v1/auth/signup",
                         "/auth/send-otp",
+                        "/api/v1/auth/send-otp",
                         "/auth/verify-otp",
+                        "/api/v1/auth/verify-otp",
                         "/auth/reset-password",
+                        "/api/v1/auth/reset-password",
                         "/admin/login"
+                        ,
+                        "/api/v1/admin/login"
                 ).permitAll()
 
                 // ---- Admin endpoints ----
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
 
                 // ---- Student marketplace ----
-                    .requestMatchers("/marketplace/**").hasRole("STUDENT")
+                    .requestMatchers("/marketplace/**", "/api/v1/marketplace/**").hasRole("STUDENT")
 
                 // Everything else requires authentication. Fine-grained role checks
                 // are enforced at the controller/service level via @PreAuthorize.
