@@ -1,9 +1,12 @@
 # ---- Build stage ----
 FROM eclipse-temurin:21-jdk-alpine AS build
+RUN apk add --no-cache dos2unix
 WORKDIR /app
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+RUN dos2unix mvnw && chmod +x mvnw
+# Download dependencies first (cached layer)
+RUN ./mvnw dependency:go-offline -B
 COPY src src
 RUN ./mvnw package -DskipTests -B
 
