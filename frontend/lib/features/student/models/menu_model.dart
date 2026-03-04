@@ -54,6 +54,7 @@ class MealOption {
   final List<String> menu;
   final IconData icon;
   final Color accentColor;
+  final DateTime? deadline; // purchase deadline (client-side filtering)
 
   const MealOption({
     required this.mealType,
@@ -62,7 +63,12 @@ class MealOption {
     required this.menu,
     required this.icon,
     required this.accentColor,
+    this.deadline,
   });
+
+  /// Whether this meal's purchase window is still open.
+  bool get canPurchase =>
+      deadline == null || DateTime.now().isBefore(deadline!);
 
   factory MealOption.fromJson(Map<String, dynamic> json) => MealOption(
         mealType: json['mealType'] as String,

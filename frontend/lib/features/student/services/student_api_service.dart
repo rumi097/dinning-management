@@ -130,6 +130,11 @@ class StudentApiService {
           ? menuStr.split(',').map((s) => s.trim()).toList()
           : <String>[];
       final price = (m['price'] is num) ? (m['price'] as num).toInt() : 0;
+      final deadlineStr = m['purchaseDeadline']?.toString();
+      DateTime? deadline;
+      if (deadlineStr != null && deadlineStr.isNotEmpty) {
+        deadline = DateTime.tryParse(deadlineStr);
+      }
       return MealOption(
         mealType: mealType,
         price: price,
@@ -139,6 +144,7 @@ class StudentApiService {
             ? Icons.wb_sunny_outlined
             : Icons.nightlight_outlined,
         accentColor: mealType == 'Lunch' ? Colors.orange : Colors.deepPurple,
+        deadline: deadline,
       );
     }).toList();
   }

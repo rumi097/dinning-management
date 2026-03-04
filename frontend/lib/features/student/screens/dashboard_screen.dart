@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
@@ -22,11 +23,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   WalletModel? _wallet;
   List<TokenModel> _tokens = [];
   List<MealOption> _availableMeals = [];
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    // Auto-refresh every 30 seconds to pick up deadline expiry
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _loadData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -45,7 +57,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _wallet = results[0] as WalletModel;
         _tokens = results[1] as List<TokenModel>;
-        _availableMeals = results[2] as List<MealOption>;
+        // Filter out meals whose purchase deadline has passed
+        _availableMeals = (results[2] as List<MealOption>)
+            .where((m) => m.canPurchase)
+            .toList();
         _isLoading = false;
       });
     } catch (e) {

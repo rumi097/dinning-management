@@ -24,6 +24,7 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     List<Token> findByMealId(Long mealId);
     Optional<Token> findByMealIdAndOwnerId(Long mealId, Long ownerId);
     long countByMealId(Long mealId);
+    long countByMealIdAndStatusNot(Long mealId, TokenStatus status);
     List<Token> findByMealIdIn(List<Long> mealIds);
 
     @Query("SELECT COUNT(t) FROM Token t WHERE t.meal.id IN :mealIds")

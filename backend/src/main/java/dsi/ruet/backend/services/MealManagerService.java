@@ -47,6 +47,9 @@ public class MealManagerService {
     private TokenRepository tokenRepository;
 
     @Autowired
+    private TokenTransactionRepository tokenTransactionRepository;
+
+    @Autowired
     private CoinTransactionRepository coinTransactionRepository;
 
     @Autowired
@@ -343,7 +346,7 @@ public class MealManagerService {
         int dinnerSold = 0;
 
         for (Meal meal : meals) {
-            long count = tokenRepository.countByMealId(meal.getId());
+            long count = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
             if (meal.getMealType() == MealType.LUNCH) {
                 lunchSold = (int) count;
             } else if (meal.getMealType() == MealType.DINNER) {
@@ -370,7 +373,7 @@ public class MealManagerService {
         double dinnerRevenue = 0;
 
         for (Meal meal : meals) {
-            long count = tokenRepository.countByMealId(meal.getId());
+            long count = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
             double revenue = meal.getPrice().multiply(java.math.BigDecimal.valueOf(count)).doubleValue();
             if (meal.getMealType() == MealType.LUNCH) {
                 lunchRevenue = revenue;
@@ -437,7 +440,7 @@ public class MealManagerService {
             double dinnerRev = 0;
 
             for (Meal meal : dayMeals) {
-                long count = tokenRepository.countByMealId(meal.getId());
+                long count = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
                 double rev = meal.getPrice().multiply(java.math.BigDecimal.valueOf(count)).doubleValue();
                 if (meal.getMealType() == MealType.LUNCH) {
                     lunchSold = (int) count;
@@ -509,7 +512,7 @@ public class MealManagerService {
         boolean dinnerAvailable = false;
 
         for (Meal meal : meals) {
-            long count = tokenRepository.countByMealId(meal.getId());
+            long count = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
             if (meal.getMealType() == MealType.LUNCH) {
                 lunchCount = (int) count;
                 lunchRevenue = count * meal.getPrice().doubleValue();
@@ -569,7 +572,7 @@ public class MealManagerService {
             double dinnerPrice = 0;
 
             for (Meal meal : dayMeals) {
-                long count = tokenRepository.countByMealId(meal.getId());
+                long count = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
                 if (meal.getMealType() == MealType.LUNCH) {
                     lunchCount = (int) count;
                     lunchPrice = meal.getPrice().doubleValue();
@@ -674,7 +677,7 @@ public class MealManagerService {
         List<Meal> pendingMeals = mealRepository.findByHallIdAndIsClosedTrueAndRefundedAtIsNull(hallId);
         double totalPending = 0;
         for (Meal meal : pendingMeals) {
-            long tokenCount = tokenRepository.countByMealId(meal.getId());
+            long tokenCount = tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
             totalPending += meal.getPrice().multiply(BigDecimal.valueOf(tokenCount)).doubleValue();
         }
 
@@ -867,7 +870,7 @@ public class MealManagerService {
                     );
                 }).toList();
 
-        int tokensSold = (int) tokenRepository.countByMealId(meal.getId());
+        int tokensSold = (int) tokenRepository.countByMealIdAndStatusNot(meal.getId(), TokenStatus.CANCELLED);
         // For completed refunds, tokens are already deleted, so tokensSold = 0
         // We can infer from status
         double totalRefundAmount = meal.getPrice().multiply(java.math.BigDecimal.valueOf(tokensSold)).doubleValue();
@@ -932,7 +935,13 @@ public class MealManagerService {
                 // Record refund as REFUND coin transaction: manager → student
                 recordCoinTransaction(manager, token.getOwner(), refundAmount, "REFUND");
 
-                // Delete the token
+                // Delete associated token transactions first (FK constraint)
+                List<TokenTransaction> txns = tokenTransactionRepository.findByTokenId(token.getId());
+                if (!txns.isEmpty()) {
+                    tokenTransactionRepository.deleteAll(txns);
+                }
+
+                // Now delete the token
                 tokenRepository.delete(token);
                 refundCount++;
             }

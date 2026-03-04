@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
@@ -17,11 +18,22 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   String? _errorMessage;
   List<MealOption> _meals = [];
   bool _isPurchasing = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAvailableTokens();
+    // Auto-refresh every 30 seconds to drop expired meals
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _loadAvailableTokens();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAvailableTokens() async {
@@ -34,7 +46,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       final available = await widget.apiService.getAvailableMeals();
       if (!mounted) return;
       setState(() {
-        _meals = available;
+        // Filter out meals whose purchase deadline has passed
+        _meals = available.where((m) => m.canPurchase).toList();
         _isLoading = false;
       });
     } catch (e) {
