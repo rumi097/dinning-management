@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/storage/token_storage.dart';
@@ -54,14 +55,16 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => AdminHome(apiService: adminService),
-        ),
+        MaterialPageRoute(builder: (_) => AdminHome(apiService: adminService)),
       );
     } catch (e) {
       if (!mounted) return;
+
+      final message = (e is DioException)
+          ? ApiClient.getErrorMessage(e)
+          : 'Invalid admin credentials';
       setState(() {
-        _error = 'Invalid admin credentials';
+        _error = message;
         _loading = false;
       });
     }
@@ -82,16 +85,25 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.admin_panel_settings,
-                      size: 72, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 72,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(height: 16),
-                  Text('Admin Login',
-                      style: theme.textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Admin Login',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text('Sign in with developer credentials',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(
+                    'Sign in with developer credentials',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: 32),
                   if (_error != null) ...[
                     Container(
@@ -100,16 +112,24 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         color: theme.colorScheme.errorContainer,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(children: [
-                        Icon(Icons.error_outline,
-                            color: theme.colorScheme.error, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(_error!,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: theme.colorScheme.error,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
                               style: TextStyle(
-                                  color: theme.colorScheme.onErrorContainer)),
-                        ),
-                      ]),
+                                color: theme.colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -131,11 +151,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure
-                            ? Icons.visibility_off
-                            : Icons.visibility),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
                     validator: (v) =>
@@ -152,7 +171,9 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Text('Sign In'),
                     ),
