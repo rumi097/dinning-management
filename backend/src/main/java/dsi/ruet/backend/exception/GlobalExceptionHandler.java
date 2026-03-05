@@ -4,13 +4,16 @@ import dsi.ruet.backend.dto.ErrorResponse;
 import dsi.ruet.backend.marketplace.exception.MarketplaceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.Ordered;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dsi.ruet.backend.controllers")
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateEmailException.class)

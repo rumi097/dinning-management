@@ -3,11 +3,14 @@ package dsi.ruet.backend.common.exception;
 import dsi.ruet.backend.common.dto.ApiResponse;
 import dsi.ruet.backend.marketplace.exception.MarketplaceException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.Ordered;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dsi.ruet.backend.marketplace")
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
 public class MarketplaceExceptionHandler {
 
