@@ -28,12 +28,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AuthenticationService {
@@ -59,11 +63,10 @@ public class AuthenticationService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
 
-    @Value("${app.mail.from}")
-    private String mailFrom;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     // ==================== IN-MEMORY CACHES FOR OTP FLOW ====================
     // Stores email -> OTP pairs (temporary storage, expires after verification)
@@ -290,8 +293,9 @@ public class AuthenticationService {
         // Note: If email already exists, the new OTP-expiry pair will override the old one
         emailOtpCache.put(email, new OtpEntry(otp, expiryTime));
         
-        // Send OTP to email using JavaMailSender
-        sendOTPEmail(email, otp);
+        // Send OTP to email asynchronously so we respond immediately
+        // (Gmail SMTP on Render can take 30-60s — blocking here causes client timeouts)
+        CompletableFuture.runAsync(() -> sendOTPEmail(email, otp));
         
         OtpResponse response = new OtpResponse();
         response.setEmail(email);
@@ -387,28 +391,38 @@ public class AuthenticationService {
     }
 
     /**
-     * Send OTP via email using JavaMailSender
-     * @param email User email
-     * @param otp OTP code to send
+     * Send OTP via Resend HTTP API (works on Render — no SMTP ports needed).
+     * Render blocks all outbound SMTP (ports 25, 587, 465), so JavaMail cannot be used.
+     * Resend uses HTTPS (port 443) and has a free tier of 3,000 emails/month.
+     * Sign up at https://resend.com and set RESEND_API_KEY on Render.
      */
     private void sendOTPEmail(String email, String otp) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("OTP Verification - Your OTP Code");
-            message.setText("Hello,\n\n" +
+            if (resendApiKey == null || resendApiKey.isEmpty()) {
+                System.err.println("RESEND_API_KEY not configured. OTP for " + email + ": " + otp);
+                return;
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + resendApiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("from", "Digital Dining System <onboarding@resend.dev>");
+            body.put("to", List.of(email));
+            body.put("subject", "OTP Verification - Your OTP Code");
+            body.put("text",
+                    "Hello,\n\n" +
                     "Your One-Time Password (OTP) for signup verification is: " + otp + "\n\n" +
                     "This OTP is valid for 5 minutes only.\n\n" +
                     "If you did not request this OTP, please ignore this email.\n\n" +
-                    "Best regards,\n" +
-                    "Your Application Team");
-            message.setFrom(mailFrom);
-            
-            mailSender.send(message);
-            System.out.println("OTP email sent successfully to: " + email);
+                    "Best regards,\nDigital Dining System Team");
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity("https://api.resend.com/emails", entity, String.class);
+            System.out.println("OTP email sent via Resend to: " + email);
         } catch (Exception e) {
             System.err.println("Failed to send OTP email to " + email + ": " + e.getMessage());
-            e.printStackTrace();
         }
     }
 

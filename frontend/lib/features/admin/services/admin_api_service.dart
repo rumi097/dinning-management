@@ -29,8 +29,8 @@ class AdminApiService {
   static Future<Map<String, dynamic>> login(String email, String password) async {
     final dio = Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 90),  // Render free tier cold start can take 60-90s
+      receiveTimeout: const Duration(seconds: 90),
       headers: {'Content-Type': 'application/json'},
     ));
     final res = await dio.post('/admin/login', data: {

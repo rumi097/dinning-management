@@ -14,10 +14,8 @@ services:
         generateValue: true
       - key: ADMIN_PASSWORD
         value: admin@ruet2024
-      - key: SPRING_MAIL_USERNAME
-        sync: false  # Your Gmail address
-      - key: SPRING_MAIL_PASSWORD
-        sync: false  # Your Gmail App Password
+      - key: RESEND_API_KEY
+        sync: false  # Get free API key from https://resend.com → API Keys
       - key: PORT
         value: "8080"
 

@@ -1,22 +1,17 @@
-import 'package:flutter/foundation.dart';
-
 class ApiConstants {
   // Base URL — can be overridden at build time via:
   //   --dart-define=BASE_URL=https://your-server.com/api/v1
   //
-  // If not overridden:
-  // - Debug/Profile: localhost (for local development)
-  // - Release: Render production backend
+  // Defaults to the Render production backend for all build modes.
+  // Note: 'localhost' never works on a physical device — it refers to the
+  // device itself, not your dev machine or the Render server.
   static const String _buildTimeBaseUrl = String.fromEnvironment('BASE_URL');
 
   static String get baseUrl {
     if (_buildTimeBaseUrl.isNotEmpty) {
       return _buildTimeBaseUrl;
     }
-
-    return kReleaseMode
-        ? 'https://dsi-backend-gy8s.onrender.com/api/v1'
-        : 'http://localhost:8080/api/v1';
+    return 'https://dsi-backend-gy8s.onrender.com/api/v1';
   }
 
   // Auth endpoints
@@ -32,8 +27,8 @@ class ApiConstants {
   static const String resetPasswordEndpoint = '/auth/reset-password';
 
   // API timeout in milliseconds
-  static const int connectTimeout = 30000;
-  static const int receiveTimeout = 30000;
+  static const int connectTimeout = 90000;  // 90s — allows for Render free tier cold start
+  static const int receiveTimeout = 90000;  // 90s — Gmail SMTP can be slow on Render
 
   // Headers
   static const String contentTypeHeader = 'content-type';
