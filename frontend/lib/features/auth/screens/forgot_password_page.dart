@@ -51,7 +51,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      await ServiceLocator.authService.sendResetOtp(
+      final otpResponse = await ServiceLocator.authService.sendResetOtp(
         _emailController.text.trim(),
       );
 
@@ -59,7 +59,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('OTP sent to your email!'),
+          content: Text('OTP generated — check the code on the next screen'),
           backgroundColor: Colors.green,
         ),
       );
@@ -73,6 +73,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           builder: (_) => OtpPage(
             email: _emailController.text.trim(),
             flowType: 'forgot_password',
+            otpCode: otpResponse.otpCode,
             onSuccess: () {},
           ),
         ),

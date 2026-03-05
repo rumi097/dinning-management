@@ -11,4 +11,5 @@ public class OtpResponse {
     private String message;
     private String email;
     private boolean success;
+    private String otpCode; // returned directly so no email service is needed
 }

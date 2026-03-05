@@ -11,6 +11,7 @@ class OtpPage extends StatefulWidget {
   final String flowType; // 'signup' or 'forgot_password'
   final VoidCallback onSuccess;
   final SignupRequest? signupRequest; // Form data for signup flow
+  final String? otpCode; // OTP returned directly from backend
 
   const OtpPage({
     super.key,
@@ -18,6 +19,7 @@ class OtpPage extends StatefulWidget {
     required this.flowType,
     required this.onSuccess,
     this.signupRequest,
+    this.otpCode,
   });
 
   @override
@@ -262,6 +264,35 @@ class _OtpPageState extends State<OtpPage> {
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
+                        if (widget.otpCode != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Your OTP Code',
+                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: scheme.onPrimaryContainer,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.otpCode!,
+                                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 8,
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

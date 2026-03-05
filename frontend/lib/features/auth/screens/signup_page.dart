@@ -130,16 +130,16 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Step 1: Send OTP to email
+      // Step 1: Send OTP request
       final email = _emailController.text.trim();
-      await ServiceLocator.authService.sendSignupOtp(email);
+      final otpResponse = await ServiceLocator.authService.sendSignupOtp(email);
 
       if (!mounted) return;
 
       // Step 2: Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('OTP sent to your email'),
+          content: Text('OTP generated — check the code on the next screen'),
           backgroundColor: Colors.green,
         ),
       );
@@ -170,6 +170,7 @@ class _SignupPageState extends State<SignupPage> {
             email: email,
             flowType: 'signup',
             signupRequest: request, // Pass form data to OTP page
+            otpCode: otpResponse.otpCode,
             onSuccess: () {
               // After OTP verification and signup, navigate to login
               Navigator.of(context).pushReplacementNamed('/login');

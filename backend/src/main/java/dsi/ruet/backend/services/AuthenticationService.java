@@ -299,8 +299,9 @@ public class AuthenticationService {
         
         OtpResponse response = new OtpResponse();
         response.setEmail(email);
-        response.setMessage("OTP sent to your email. Please verify with /verify-otp endpoint. OTP expires in 5 minutes.");
+        response.setMessage("OTP generated. Use the code shown in the app to verify.");
         response.setSuccess(true);
+        response.setOtpCode(otp);
         
         return response;
     }
